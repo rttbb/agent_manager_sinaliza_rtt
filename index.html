@@ -10,7 +10,6 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
-    :root { --bg: 255 255 255; --fg: 17 24 39; }
     html { font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji"; }
     .glass { backdrop-filter: blur(10px); background: rgba(255,255,255,.65); }
     @media (prefers-color-scheme: dark) {
@@ -46,7 +45,9 @@
       <section class="lg:col-span-1">
         <div class="glass rounded-2xl shadow-xl ring-1 ring-black/5 dark:ring-white/10 p-6">
           <h2 class="text-lg font-semibold mb-3">Envie um objetivo</h2>
-          <p class="text-sm text-slate-600 dark:text-slate-300 mb-4">Descreva o que você quer alcançar. O agente de IA retornará tendências recomendadas alinhadas ao objetivo informado.</p>
+          <p class="text-sm text-slate-600 dark:text-slate-300 mb-4">
+            Descreva o que você quer alcançar. O agente de IA retornará tendências recomendadas alinhadas ao objetivo informado.
+          </p>
 
           <label for="apiUrl" class="block text-xs font-medium text-slate-600 dark:text-slate-300 mb-1">
             Endpoint da API (/sinalizartt)
@@ -55,7 +56,9 @@
             <input id="apiUrl" type="url" class="w-full rounded-xl border border-slate-300/70 dark:border-slate-700 bg-white/70 dark:bg-slate-900/40 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400" placeholder="http://localhost:8000/api/sinalizartt" />
             <button id="saveApi" class="px-3 py-2 rounded-xl bg-slate-800 text-white text-xs hover:bg-slate-900 dark:bg-slate-700 dark:hover:bg-slate-600">Salvar</button>
           </div>
-          <p class="text-[11px] text-slate-500 mb-5">Dica: salve o <span class="code">endpoint completo</span> do seu backend FastAPI (ex.: <span class="code">http://localhost:8000/api/sinalizartt</span>). Persistimos no <span class="code">localStorage</span>.</p>
+          <p class="text-[11px] text-slate-500 mb-5">
+            Dica: salve o <span class="code">endpoint completo</span> do seu backend (ex.: <span class="code">http://localhost:8000/api/sinalizartt</span>). Salvamos no <span class="code">localStorage</span>.
+          </p>
 
           <label for="objective" class="block text-xs font-medium text-slate-600 dark:text-slate-300 mb-1">Objetivo</label>
           <textarea id="objective" rows="5" class="w-full rounded-xl border border-slate-300/70 dark:border-slate-700 bg-white/70 dark:bg-slate-900/40 px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400" placeholder="aumentar a visibilidade e segurança do meu portal de noticias online"></textarea>
@@ -84,7 +87,7 @@
             <li>Você informa um objetivo.</li>
             <li>O frontend chama o <span class="code">endpoint</span> do seu backend.</li>
             <li>O backend consulta o agente de IA e enriquece com o dicionário de tendências.</li>
-            <li>Exibimos apenas: <span class="code">objective</span> e a lista de recomendações com <span class="code">tendencia</span>, <span class="code">maturidade</span>, <span class="code">tema</span> e <span class="code">explicacao</span>. Se não houver IDs, mostramos somente a <span class="code">message</span> do agente.</li>
+            <li>Se houver tendências, exibimos cartões com <span class="code">tendencia</span>, <span class="code">maturidade</span>, <span class="code">tema</span> e <span class="code">explicacao</span>. Se não houver, exibimos somente a <span class="code">message</span> do agente e a <span class="code">data</span> da consulta.</li>
           </ol>
         </div>
       </section>
@@ -174,14 +177,50 @@
     }
 
     function escapeHtml(str) {
-      return String(str).replace(/[&<>\"']/g, (ch) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[ch]));
+      return String(str).replace(/[&<>"']/g, (ch) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[ch]));
+    }
+
+    // Remove cercas ```...```
+    function stripCodeFences(text) {
+      if (!text) return "";
+      return String(text).replace(/```[a-zA-Z0-9_+-]*\s*([\s\S]*?)```/g, (_, inner) => inner.trim()).trim();
+    }
+
+    // Extrai mensagem principal (analise_objetivo) se a string vier em JSON
+    function extractMessage(raw) {
+      if (raw == null) return "";
+      const clean = stripCodeFences(String(raw).trim());
+      try {
+        const j = JSON.parse(clean);
+        if (j && typeof j === "object" && typeof j.analise_objetivo === "string") {
+          return j.analise_objetivo.trim();
+        }
+      } catch (_) {}
+      return clean;
+    }
+
+    // Extrai data se vier em data.date ou data.data_analise; senão tenta pegar da string JSON
+    function extractDateField(data) {
+      if (!data) return "";
+      if (typeof data.date === "string" && data.date) return data.date;
+      if (typeof data.data_analise === "string" && data.data_analise) return data.data_analise;
+      // último fallback: tentar parsear do message se ele contiver JSON
+      if (data.message) {
+        const clean = stripCodeFences(String(data.message));
+        try {
+          const j = JSON.parse(clean);
+          if (j && typeof j.data_analise === "string") return j.data_analise;
+          if (j && typeof j.date === "string") return j.date;
+        } catch(_) {}
+      }
+      return "";
     }
 
     // ===== Render =====
     function renderResult(data) {
       // Shapes:
       // 1) { objective, recommendations:[...] }
-      // 2) { objective, message:"..." } (sem IDs)
+      // 2) { objective, message:"...", date?: "YYYY-MM-DD" } (sem IDs)
       cards.innerHTML = '';
       clearError();
 
@@ -190,9 +229,14 @@
       resultObjective.classList.add('hidden');
       resultObjective.textContent = '';
 
-      // Caso 2: só mensagem do agente
-      if (!data || !Array.isArray(data.recommendations) || data.recommendations.length === 0) {
-        if (data && data.message) {
+      const hasRecs = data && Array.isArray(data.recommendations) && data.recommendations.length > 0;
+
+      if (!hasRecs) {
+        // Mostrar somente a mensagem + data (se houver)
+        const msg = data ? extractMessage(data.message) : "";
+        const dateStr = extractDateField(data);
+
+        if (msg) {
           const card = document.createElement('article');
           card.className = 'rounded-xl border border-amber-300/70 dark:border-amber-700 glass p-4 shadow-sm';
           card.innerHTML = `
@@ -200,13 +244,16 @@
               <span class="text-amber-600 dark:text-amber-300">⚠️</span>
               <div>
                 <h3 class="font-semibold mb-1">Resposta do agente</h3>
-                <p class="text-sm">${escapeHtml(data.message)}</p>
+                <p class="text-sm">${escapeHtml(msg)}</p>
+                ${dateStr ? `<p class="text-xs text-slate-500 mt-2">Data da consulta: <span class="code">${escapeHtml(dateStr)}</span></p>` : ""}
               </div>
             </div>`;
           cards.appendChild(card);
-          resultObjective.classList.remove('hidden');
-          resultObjective.textContent = data.objective ? `Objetivo: ${data.objective}` : '';
-          debugPre.textContent = JSON.stringify(data, null, 2);
+          if (data && data.objective) {
+            resultObjective.classList.remove('hidden');
+            resultObjective.textContent = `Objetivo: ${data.objective}`;
+          }
+          debugPre.textContent = JSON.stringify(data || {}, null, 2);
           return;
         }
         // Sem mensagem e sem recomendações → vazio
@@ -272,9 +319,11 @@
         ]));
         return rows.map(r => r.map(cell => `"${String(cell).replace(/"/g,'""')}"`).join(',')).join('\n');
       }
-      // Só mensagem
-      if (data && data.message) {
-        const rows = [['tipo','mensagem'], ['agente', data.message.replace(/\n/g,' ')]];
+      // Só mensagem + data
+      if (data && (data.message || data.date || data.data_analise)) {
+        const msg = extractMessage(data.message).replace(/\n/g,' ');
+        const d = extractDateField(data);
+        const rows = [['tipo','mensagem','data'], ['agente', msg, d || '']];
         return rows.map(r => r.map(cell => `"${String(cell).replace(/"/g,'""')}"`).join(',')).join('\n');
       }
       return '';
@@ -334,8 +383,8 @@
 
     exportJsonBtn.addEventListener('click', () => {
       const txt = debugPre.textContent.trim();
-      const content = txt ? txt : JSON.stringify({ objective: objectiveInput.value.trim(), recommendations: [] }, null, 2);
-      download('sinaliza_result.json', content, 'application/json');
+      const fallback = JSON.stringify({ objective: objectiveInput.value.trim(), recommendations: [] }, null, 2);
+      download('sinaliza_result.json', txt || fallback, 'application/json');
     });
 
     exportCsvBtn.addEventListener('click', () => {
