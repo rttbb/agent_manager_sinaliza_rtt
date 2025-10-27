@@ -12,9 +12,7 @@
   <style>
     html { font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji"; }
     .glass { backdrop-filter: blur(10px); background: rgba(255,255,255,.65); }
-    @media (prefers-color-scheme: dark) {
-      .glass { background: rgba(17,24,39,.55); }
-    }
+    @media (prefers-color-scheme: dark) { .glass { background: rgba(17,24,39,.55); } }
     .code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
   </style>
 </head>
@@ -87,7 +85,7 @@
             <li>Você informa um objetivo.</li>
             <li>O frontend chama o <span class="code">endpoint</span> do seu backend.</li>
             <li>O backend consulta o agente de IA e enriquece com o dicionário de tendências.</li>
-            <li>Se houver tendências, exibimos cartões com <span class="code">tendencia</span>, <span class="code">maturidade</span>, <span class="code">tema</span> e <span class="code">explicacao</span>. Se não houver, exibimos somente a <span class="code">message</span> do agente e a <span class="code">data</span> da consulta.</li>
+            <li>Se houver tendências, exibimos cartões com os campos retornados. Se não houver, exibimos somente a <span class="code">message</span> do agente e a <span class="code">data</span> da consulta.</li>
           </ol>
         </div>
       </section>
@@ -216,11 +214,53 @@
       return "";
     }
 
+    // ==== NOVO: Normalizador para resposta com "tendencias_recomendadas" ====
+    function normalizeResponse(data) {
+      // Clonar superficialmente para não mutar referência externa
+      const d = (data && typeof data === 'object') ? JSON.parse(JSON.stringify(data)) : data;
+
+      // Caso a resposta venha como string JSON dentro de message
+      if (d && typeof d.message === 'string') {
+        const clean = stripCodeFences(d.message);
+        try {
+          const parsed = JSON.parse(clean);
+          // Se dentro do message tem a estrutura nova, preferir ela
+          if (parsed && parsed.tendencias_recomendadas) {
+            return normalizeResponse(parsed);
+          }
+        } catch(_) {}
+      }
+
+      // Se já estiver no formato antigo esperado { objective, recommendations }
+      if (d && Array.isArray(d.recommendations)) return d;
+
+      // Se vier no novo formato
+      if (d && Array.isArray(d.tendencias_recomendadas)) {
+        const recs = d.tendencias_recomendadas.map((it) => ({
+          id: it.id_tendencia ?? undefined,
+          tendencia: it.nome_tendencia || '—',
+          explicacao: it.justificativa || '—',
+          tema: it.tema || '',
+          maturidade: (it.maturidade || it.nivel || '') || (typeof it.score_relevancia !== 'undefined' ? `score ${it.score_relevancia}` : ''),
+          score_relevancia: it.score_relevancia,
+          link: it.link_da_tendenica || it.link_da_tendencia || it.link || ''
+        }));
+        return {
+          objective: d.analise_objetivo || d.objective || '',
+          date: d.data_analise || d.date || '',
+          recommendations: recs
+        };
+      }
+
+      // Se a API devolveu apenas uma mensagem e/ou data, manter como está
+      return d;
+    }
+
     // ===== Render =====
-    function renderResult(data) {
-      // Shapes:
-      // 1) { objective, recommendations:[...] }
-      // 2) { objective, message:"...", date?: "YYYY-MM-DD" } (sem IDs)
+    function renderResult(rawData) {
+      // Suporta múltiplos shapes, normalizando quando possível
+      const data = normalizeResponse(rawData);
+
       cards.innerHTML = '';
       clearError();
 
@@ -249,39 +289,46 @@
               </div>
             </div>`;
           cards.appendChild(card);
-          if (data && data.objective) {
+          if (data && (data.objective || data.analise_objetivo)) {
             resultObjective.classList.remove('hidden');
-            resultObjective.textContent = `Objetivo: ${data.objective}`;
+            resultObjective.textContent = `Objetivo: ${data.objective || data.analise_objetivo}`;
           }
-          debugPre.textContent = JSON.stringify(data || {}, null, 2);
+          debugPre.textContent = JSON.stringify(rawData || {}, null, 2);
           return;
         }
         // Sem mensagem e sem recomendações → vazio
         emptyBox.classList.remove('hidden');
-        debugPre.textContent = JSON.stringify(data || {}, null, 2);
+        debugPre.textContent = JSON.stringify(rawData || {}, null, 2);
         return;
       }
 
       // Caso 1: recomendações presentes
       resultObjective.classList.remove('hidden');
-      resultObjective.textContent = `Objetivo: ${data.objective}`;
+      resultObjective.textContent = `Objetivo: ${data.objective || ''}`;
 
       data.recommendations.forEach((rec) => {
         const card = document.createElement('article');
         card.className = 'rounded-xl border border-slate-200/70 dark:border-slate-700 glass p-4 shadow-sm hover:shadow-md transition-shadow';
+        const badge = rec.maturidade ? `<span class="text-[11px] px-2 py-1 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-200">${escapeHtml(rec.maturidade)}</span>` : '';
+        const linkBtn = rec.link ? `<a href="${escapeHtml(rec.link)}" target="_blank" class="text-xs px-2.5 py-1.5 rounded-lg border border-indigo-300/60 dark:border-indigo-700 hover:bg-indigo-50 dark:hover:bg-indigo-900/30">Abrir tendência</a>` : '';
+
         card.innerHTML = `
           <div class="flex items-start justify-between gap-2">
             <div>
               <h3 class="font-semibold text-slate-900 dark:text-slate-100">${escapeHtml(rec.tendencia || '—')}</h3>
               <p class="text-xs text-slate-500 mt-0.5">${escapeHtml(rec.tema || '—')}</p>
             </div>
-            <span class="text-[11px] px-2 py-1 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-200">${escapeHtml(rec.maturidade || '—')}</span>
+            ${badge}
           </div>
-          <p class="mt-3 text-sm leading-relaxed">${escapeHtml(rec.explicacao || '—')}</p>`;
+          <p class="mt-3 text-sm leading-relaxed">${escapeHtml(rec.explicacao || '—')}</p>
+          <div class="mt-3 flex items-center gap-2">
+            ${linkBtn}
+            ${typeof rec.score_relevancia !== 'undefined' ? `<span class="ml-auto text-[11px] px-2 py-1 rounded bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300">score: ${escapeHtml(rec.score_relevancia)}</span>` : ''}
+          </div>`;
         cards.appendChild(card);
       });
 
-      debugPre.textContent = JSON.stringify(data, null, 2);
+      debugPre.textContent = JSON.stringify(rawData, null, 2);
     }
 
     // ===== API =====
@@ -310,19 +357,22 @@
     }
 
     // ===== Export =====
-    function toCsv(data) {
-      // Com recomendações
-      if (data && Array.isArray(data.recommendations) && data.recommendations.length > 0) {
-        const rows = [['tendencia','maturidade','tema','explicacao']];
+    function toCsv(raw) {
+      const data = normalizeResponse(raw) || {};
+      if (Array.isArray(data.recommendations) && data.recommendations.length > 0) {
+        const header = ['id','tendencia','tema','maturidade','score_relevancia','link','explicacao'];
+        const rows = [header];
         data.recommendations.forEach(r => rows.push([
-          r.tendencia || '', r.maturidade || '', r.tema || '', (r.explicacao || '').replace(/\n/g, ' ')
+          r.id ?? '', r.tendencia || '', r.tema || '', r.maturidade || '',
+          (typeof r.score_relevancia !== 'undefined' ? r.score_relevancia : ''), r.link || '',
+          (r.explicacao || '').replace(/\n/g, ' ')
         ]));
         return rows.map(r => r.map(cell => `"${String(cell).replace(/"/g,'""')}"`).join(',')).join('\n');
       }
       // Só mensagem + data
-      if (data && (data.message || data.date || data.data_analise)) {
-        const msg = extractMessage(data.message).replace(/\n/g,' ');
-        const d = extractDateField(data);
+      if (raw && (raw.message || raw.date || raw.data_analise)) {
+        const msg = extractMessage(raw.message).replace(/\n/g,' ');
+        const d = extractDateField(raw);
         const rows = [['tipo','mensagem','data'], ['agente', msg, d || '']];
         return rows.map(r => r.map(cell => `"${String(cell).replace(/"/g,'""')}"`).join(',')).join('\n');
       }
@@ -388,9 +438,9 @@
     });
 
     exportCsvBtn.addEventListener('click', () => {
-      let data = {};
-      try { data = JSON.parse(debugPre.textContent || '{}'); } catch {}
-      const csv = toCsv(data);
+      let raw = {};
+      try { raw = JSON.parse(debugPre.textContent || '{}'); } catch {}
+      const csv = toCsv(raw);
       if (!csv) { toast('Nada para exportar.'); return; }
       download('sinaliza_result.csv', csv, 'text/csv');
     });
