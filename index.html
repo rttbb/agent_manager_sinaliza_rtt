@@ -3,333 +3,454 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Scrape Playground — Google/Bing News</title>
+<title>Scrape Playground • Google & Bing News</title>
 <meta name="color-scheme" content="light dark" />
 <style>
   :root{
-    --bg: #0b0c10;
-    --card: #111218;
-    --muted: #b8bcca;
-    --text: #e9edf4;
-    --primary: #6aa6ff;
+    --bg: #0c0f14;
+    --bg-soft:#0f131a;
+    --card: #121723;
+    --card-2:#111729;
+    --elev: rgba(255,255,255,.06);
+    --muted: #99a3b3;
+    --text: #eaf0ff;
+    --headline:#f5f7ff;
+    --primary:#6aa6ff;
     --primary-600:#4e8ef5;
-    --accent: #6cf0b3;
-    --danger:#ff5d6c;
-    --warn:#ffca64;
-    --border:#232532;
+    --accent:#61e7b1;
+    --border:#1b2233;
+    --warn:#ffc85a;
+    --danger:#ff6a76;
+    --ok:#57d39b;
+    --chip:#1b2233;
+    --chip-2:#0e1522;
+    --shadow: 0 10px 30px rgba(0,0,0,.35);
   }
-  @media (prefers-color-scheme: light) {
+  @media (prefers-color-scheme: light){
     :root{
-      --bg:#f6f7fb; --card:#ffffff; --muted:#5a6475; --text:#0f172a;
-      --primary:#2563eb; --primary-600:#1d4ed8; --accent:#10b981;
-      --danger:#ef4444; --warn:#f59e0b; --border:#e5e7eb;
+      --bg:#f7f8fb; --bg-soft:#eef1f7; --card:#ffffff; --card-2:#ffffff;
+      --elev: rgba(2,6,23,.05); --muted:#607089; --text:#0d1b2a; --headline:#091422;
+      --primary:#2563eb; --primary-600:#1d4ed8; --accent:#0ea5a5; --border:#e6ebf2;
+      --warn:#d97706; --danger:#e11d48; --ok:#059669; --chip:#f1f5fb; --chip-2:#eef2f8;
+      --shadow: 0 10px 30px rgba(2,6,23,.08);
     }
   }
+
   *{box-sizing:border-box}
   html,body{height:100%}
   body{
-    margin:0; font:16px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,"Helvetica Neue",Arial,"Apple Color Emoji","Segoe UI Emoji";
-    background:linear-gradient(180deg,var(--bg),#0d0e14 45%,var(--bg));
+    margin:0; font:15.5px/1.55 Inter, system-ui, Segoe UI, Roboto, Helvetica, Arial, Apple Color Emoji, Segoe UI Emoji;
+    background:
+      radial-gradient(1200px 700px at 15% -10%, rgba(103,171,255,.18), transparent 60%),
+      radial-gradient(1200px 700px at 85% 0%, rgba(84,215,169,.12), transparent 60%),
+      linear-gradient(180deg, var(--bg), var(--bg-soft));
     color:var(--text);
   }
-  .container{max-width:1100px;margin:32px auto;padding:0 16px}
+
+  .container{max-width:1160px;margin:26px auto;padding:0 18px}
   .header{
-    display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:18px;
+    display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:18px
   }
-  .title{font-size:22px;font-weight:700;letter-spacing:.2px}
-  .subtitle{color:var(--muted);font-size:14px}
-  .card{
-    background:var(--card);border:1px solid var(--border);
-    border-radius:16px;box-shadow:0 10px 25px rgba(0,0,0,.18);overflow:hidden;
+  .brand{display:flex;align-items:center;gap:12px}
+  .logo{
+    width:40px;height:40px;border-radius:12px;background:
+      radial-gradient(70% 70% at 30% 20%, rgba(255,255,255,.35), transparent 60%),
+      linear-gradient(135deg, var(--primary), #7ed1ff);
+    box-shadow:var(--shadow); position:relative; overflow:hidden;
   }
-  .card-header{padding:16px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:12px}
-  .card-title{font-weight:600}
-  .grid{display:grid;gap:16px}
-  @media (min-width: 960px){ .grid-cols-2{grid-template-columns:1fr 1fr} }
-  .row{display:grid;grid-template-columns:160px 1fr;gap:14px;align-items:center}
-  .field{display:flex;flex-direction:column;gap:6px}
-  label{font-size:13px;color:var(--muted)}
-  input[type="text"], input[type="number"], textarea, select{
-    width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:12px;background:#0f1118;color:var(--text);
-    outline:none;transition:box-shadow .15s,border-color .15s;
+  .logo::after{
+    content:""; position:absolute; inset:0; background:linear-gradient(180deg, transparent, rgba(0,0,0,.15));
   }
-  @media (prefers-color-scheme: light){
-    input[type="text"], input[type="number"], textarea, select{background:#fff}
-  }
-  input:focus, textarea:focus, select:focus{border-color:var(--primary);box-shadow:0 0 0 4px color-mix(in oklab, var(--primary) 20%, transparent)}
-  textarea{min-height:74px;resize:vertical}
-  .hint{font-size:12px;color:var(--muted)}
-  .switch{
-    display:inline-flex;align-items:center;gap:10px;padding:6px 10px;border:1px solid var(--border);border-radius:999px;background:transparent;
-  }
-  .switch input{accent-color:var(--primary);transform:scale(1.2)}
+  .title{font-weight:800; letter-spacing:.2px; font-size:22px; color:var(--headline)}
+  .subtitle{color:var(--muted); font-size:13.5px}
+
+  .toolbar{display:flex;gap:10px;flex-wrap:wrap}
   .btn{
-    appearance:none;border:0;border-radius:12px;padding:10px 14px;font-weight:600;cursor:pointer;transition:transform .05s ease,filter .2s;
-    background:var(--primary);color:white;box-shadow:inset 0 -2px 0 rgba(0,0,0,.2), 0 6px 18px rgba(37,99,235,.25);
+    appearance:none; border:1px solid var(--border); background:linear-gradient(180deg, var(--card), var(--card-2));
+    color:var(--text); padding:10px 12px; border-radius:12px; font-weight:600; cursor:pointer;
+    box-shadow:var(--shadow); transition:transform .05s ease, filter .2s;
   }
   .btn:hover{filter:brightness(1.05)}
   .btn:active{transform:translateY(1px)}
-  .btn.secondary{background:transparent;color:var(--text);border:1px solid var(--border);box-shadow:none}
-  .btn.warn{background:var(--warn);color:#222}
-  .btn.danger{background:var(--danger)}
-  .actions{display:flex;flex-wrap:wrap;gap:10px}
-  .kpi{display:flex;gap:12px;flex-wrap:wrap}
-  .pill{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--border);background:transparent;border-radius:999px;padding:8px 10px;font-size:13px;color:var(--muted)}
-  .mono{font-family: ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,\"Liberation Mono\",\"Courier New\",monospace}
-  .results{
-    display:grid;gap:14px;padding:14px;border-top:1px solid var(--border);background:
-      linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0));
+  .btn.primary{background:linear-gradient(180deg, var(--primary), var(--primary-600)); border-color:transparent; color:#fff}
+  .btn.ghost{background:transparent}
+  .btn.warn{background:linear-gradient(180deg, #ffd580, #ffb14a); color:#1d1d1d; border-color:transparent}
+  .btn.danger{background:linear-gradient(180deg, #ff8a9a, #ff6a76); color:#1d1d1d; border-color:transparent}
+
+  .grid{display:grid; gap:16px}
+  @media (min-width: 980px){ .grid-cols-2{grid-template-columns: 400px 1fr} }
+
+  .panel{
+    background:linear-gradient(180deg, var(--card), var(--card-2));
+    border:1px solid var(--border); border-radius:18px; overflow:hidden; box-shadow:var(--shadow)
   }
-  @media (min-width: 860px){ .results{grid-template-columns:1fr 1fr} }
-  .result-card{
-    border:1px solid var(--border);border-radius:14px;background:#0f1118;padding:12px;display:grid;grid-template-columns:110px 1fr;gap:12px;align-items:start
+  .panel-h{
+    display:flex; align-items:center; justify-content:space-between; padding:14px 16px; border-bottom:1px solid var(--border);
   }
-  @media (prefers-color-scheme: light){ .result-card{background:#fff} }
-  .result-img{
-    width:110px;height:110px;border-radius:10px;object-fit:cover;background:#0b0b0f;border:1px solid var(--border)
+  .panel-title{font-weight:700}
+  .panel-kpis{display:flex; gap:8px; flex-wrap:wrap}
+  .pill{display:inline-flex; align-items:center; gap:8px; border:1px solid var(--border); background:var(--chip);
+    color:var(--muted); border-radius:999px; padding:6px 10px; font-size:12.5px}
+  .ok{color:var(--ok)} .warn{color:var(--warn)} .danger{color:var(--danger)}
+
+  .panel-b{padding:14px}
+  .section{border:1px solid var(--border); background:color-mix(in oklab, var(--card) 60%, transparent); border-radius:16px; padding:12px 12px 2px; margin-bottom:12px}
+  .section-title{font-weight:700; font-size:14px; margin-bottom:8px}
+  .row{display:grid; grid-template-columns: 160px 1fr; gap:12px; align-items:center; margin-bottom:10px}
+  .row.two-cols{grid-template-columns: 160px 1fr 160px 1fr}
+  @media (max-width:740px){ .row,.row.two-cols{grid-template-columns:1fr; align-items:stretch} }
+
+  label{color:var(--muted); font-size:12.5px}
+  input[type="text"], input[type="number"], select, textarea{
+    width:100%; background:rgba(255,255,255,.02); border:1px solid var(--border); color:var(--text);
+    padding:10px 12px; border-radius:12px; outline:none; transition:border-color .2s, box-shadow .2s;
   }
-  .result-title a{color:var(--text);text-decoration:none}
-  .result-title a:hover{text-decoration:underline;color:var(--primary)}
-  .meta{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0}
-  .badge{font-size:11px;border:1px solid var(--border);border-radius:999px;padding:2px 8px;color:var(--muted)}
+  textarea{min-height:74px; resize:vertical}
+  input:focus, textarea:focus, select:focus{
+    border-color:var(--primary); box-shadow:0 0 0 4px color-mix(in oklab, var(--primary) 18%, transparent)
+  }
+  .hint{font-size:12px; color:var(--muted); margin-top:6px}
+
+  .tabs{display:flex; gap:8px; background:var(--chip-2); border:1px solid var(--border); border-radius:12px; padding:6px}
+  .tab{
+    flex:1 0 0; text-align:center; padding:8px 10px; border-radius:10px; cursor:pointer; user-select:none;
+    border:1px solid transparent; font-weight:700; color:var(--muted)
+  }
+  .tab.active{background:var(--card); color:var(--text); border-color:var(--border); box-shadow:var(--shadow)}
+
+  .chips{display:flex; flex-wrap:wrap; gap:8px}
+  .chip{
+    border:1px solid var(--border); background:var(--chip); border-radius:999px; padding:6px 10px; font-size:12.5px; cursor:pointer;
+  }
+  .chip:hover{outline:2px solid color-mix(in oklab, var(--primary) 25%, transparent)}
+  .switch{
+    display:inline-flex; align-items:center; gap:10px; border:1px solid var(--border); border-radius:999px; padding:6px 10px;
+    background:var(--chip);
+  }
+  .switch input{accent-color:var(--primary); transform:scale(1.15)}
+
+  .toolbar-bottom{display:flex; align-items:center; justify-content:space-between; gap:8px; padding:12px 14px; border-top:1px solid var(--border)}
+  .api-hint{font-size:12.5px; color:var(--muted)}
+
+  .results{display:grid; gap:12px; padding:12px; border-top:1px solid var(--border)}
+  @media (min-width: 960px){ .results{grid-template-columns:1fr 1fr} }
+
+  .card{
+    border:1px solid var(--border); border-radius:16px; background:linear-gradient(180deg, color-mix(in oklab, var(--card) 85%, transparent), var(--card-2));
+    padding:12px; display:grid; grid-template-columns:120px 1fr; gap:12px; align-items:start; position:relative; overflow:hidden
+  }
+  .skeleton{
+    background:linear-gradient(90deg, rgba(255,255,255,.05), rgba(255,255,255,.12), rgba(255,255,255,.05));
+    background-size: 300% 100%; animation: shimmer 1.4s infinite;
+  }
+  @keyframes shimmer{ 0%{background-position:0% 0} 100%{background-position:100% 0} }
+  .thumb{width:120px; height:120px; border-radius:12px; object-fit:cover; background:#0b0f16; border:1px solid var(--border)}
+  .title a{color:var(--text); text-decoration:none}
+  .title a:hover{text-decoration:underline; color:var(--primary)}
+  .meta{display:flex; gap:8px; flex-wrap:wrap; margin:6px 0}
+  .badge{font-size:11.5px; border:1px solid var(--border); border-radius:999px; padding:2px 8px; color:var(--muted)}
+  .desc{color:var(--muted); font-size:13px}
   .content{
-    margin-top:6px;border:1px dashed var(--border);border-radius:10px;padding:10px;max-height:140px;overflow:auto;white-space:pre-wrap;background:linear-gradient(180deg, rgba(255,255,255,.02), rgba(255,255,255,0));
+    margin-top:8px; border:1px dashed var(--border); border-radius:12px; padding:10px; max-height:150px; overflow:auto; white-space:pre-wrap;
+    background:linear-gradient(180deg, rgba(255,255,255,.02), rgba(255,255,255,0));
   }
-  .content.empty{color:var(--muted);font-style:italic}
-  .footer{
-    display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px;border-top:1px solid var(--border);
-  }
-  details.json{
-    background:#0f1118;border-top:1px solid var(--border);padding:10px 14px;
-  }
-  details.json pre{
-    margin:10px 0 0;white-space:pre-wrap;word-break:break-word;background:#0b0b0f;border:1px solid var(--border);border-radius:12px;padding:12px;
-    color:var(--text);max-height:420px;overflow:auto;
-  }
+  .content.empty{font-style:italic; color:var(--muted)}
+  .json-panel{background:var(--card); border-top:1px solid var(--border); padding:10px 12px}
+  .json-panel summary{cursor:pointer; font-weight:700}
+  pre{margin:8px 0 0; background:#0e1320; color:#e8eeff; border:1px solid var(--border); border-radius:12px; padding:12px; max-height:420px; overflow:auto}
+
   .toast{
-    position:fixed;right:16px;bottom:16px;background:#10131a;border:1px solid var(--border);color:var(--text);padding:10px 12px;border-radius:12px;
-    box-shadow:0 10px 25px rgba(0,0,0,.25);display:flex;gap:10px;align-items:center;
+    position:fixed; right:16px; bottom:16px; background:var(--card); border:1px solid var(--border); border-radius:12px;
+    box-shadow:var(--shadow); padding:10px 12px; display:none; align-items:center; gap:10px; z-index:20;
   }
-  .toast.warn{border-color:var(--warn)}
-  .toast.danger{border-color:var(--danger)}
-  .link{color:var(--primary);text-decoration:none}
+  .toast.show{display:flex}
+  .toast .dot{width:8px; height:8px; border-radius:50%; background:var(--ok)}
+  .toast.warn .dot{background:var(--warn)} .toast.danger .dot{background:var(--danger)}
+
+  .link{color:var(--primary); text-decoration:none}
   .link:hover{text-decoration:underline}
 </style>
 </head>
 <body>
   <div class="container">
+
     <div class="header">
-      <div>
-        <div class="title">Scrape Playground</div>
-        <div class="subtitle">Teste os endpoints <span class="mono">/v2/scrape/google</span> e <span class="mono">/v2/scrape/bing</span></div>
+      <div class="brand">
+        <div class="logo" aria-hidden="true"></div>
+        <div>
+          <div class="title">Scrape Playground</div>
+          <div class="subtitle">Google & Bing News • /v2/scrape</div>
+        </div>
       </div>
-      <div class="actions">
-        <button id="btnSampleGoogle" class="btn secondary">Exemplo Google</button>
-        <button id="btnSampleBing" class="btn secondary">Exemplo Bing</button>
-        <a href="#" id="btnReset" class="btn warn">Limpar</a>
+      <div class="toolbar">
+        <button id="btnSampleGoogle" class="btn ghost">Exemplo Google</button>
+        <button id="btnSampleBing" class="btn ghost">Exemplo Bing</button>
+        <button id="btnReset" class="btn warn">Limpar</button>
       </div>
     </div>
 
-    <div class="card">
-      <div class="card-header">
-        <div class="card-title">Parâmetros</div>
-        <div class="kpi">
-          <span class="pill">Status: <strong id="status">pronto</strong></span>
-          <span class="pill">Itens: <strong id="kpiCount">0</strong></span>
-          <span class="pill">Tempo: <strong id="kpiTime">-</strong></span>
-        </div>
-      </div>
-
-      <div class="grid grid-cols-2" style="padding:16px">
-        <div class="field">
-          <label for="provider">Provedor</label>
-          <select id="provider">
-            <option value="google">Google News</option>
-            <option value="bing">Bing News</option>
-          </select>
-          <div class="hint">Bing permite <b>capture_content</b> para texto do artigo.</div>
-        </div>
-
-        <div class="field">
-          <label for="lang">Idioma</label>
-          <select id="lang">
-            <option value="pt-BR" selected>Português (Brasil)</option>
-            <option value="en-US">English (US)</option>
-          </select>
-        </div>
-
-        <div class="field">
-          <label for="keywords">Keywords (lista)</label>
-          <textarea id="keywords" placeholder="Ex.: IA, open banking"></textarea>
-          <div class="hint">Separar por vírgula, ponto-e-vírgula ou nova linha.</div>
-        </div>
-
-        <div class="field">
-          <label for="keywordsExact">Keywords exatas (aspas)</label>
-          <textarea id="keywordsExact" placeholder="Ex.: &quot;inteligência artificial generativa&quot;"></textarea>
-        </div>
-
-        <div class="field">
-          <label for="sites">Sites (domínios)</label>
-          <textarea id="sites" placeholder="Ex.: exame.com, tecmundo.com.br"></textarea>
-          <div class="hint">Apenas domínio, sem http/https e sem paths.</div>
-        </div>
-
-        <div class="field">
-          <div class="row">
-            <label for="n">Limite / combinação</label>
-            <input type="number" id="n" min="1" max="50" value="5" />
-          </div>
-          <div class="row">
-            <label for="period">Período</label>
-            <input type="text" id="period" placeholder="Google: 6h/3d/1y | Bing: 4/7/8/9" />
-          </div>
-          <div class="hint" id="hintPeriod">Google → 1h..24h, 1d..30d, 1y</div>
-        </div>
-
-        <div class="field">
-          <div class="switch">
-            <input type="checkbox" id="useDb" />
-            <label for="useDb">Carregar dados da base (use_db)</label>
-          </div>
-          <div id="areaWrap" class="field" style="margin-top:8px;display:none">
-            <label for="area">Área (obrigatório se usar base)</label>
-            <input type="text" id="area" placeholder="ex.: financas-retail" />
+    <div class="grid grid-cols-2">
+      <!-- FORM -->
+      <section class="panel" aria-label="Parâmetros de consulta">
+        <div class="panel-h">
+          <div class="panel-title">Parâmetros</div>
+          <div class="panel-kpis">
+            <span class="pill">Status: <b id="status">pronto</b></span>
+            <span class="pill">Itens: <b id="kpiCount">0</b></span>
+            <span class="pill">Tempo: <b id="kpiTime">-</b></span>
           </div>
         </div>
 
-        <div class="field" id="captureWrap" style="display:none">
-          <div class="switch">
-            <input type="checkbox" id="captureContent" checked />
-            <label for="captureContent">Capturar conteúdo do artigo (Bing)</label>
+        <div class="panel-b">
+          <!-- Tabs provider -->
+          <div class="section">
+            <div class="section-title">Provedor</div>
+            <div class="tabs" role="tablist" aria-label="Escolher provedor">
+              <div id="tabGoogle" class="tab active" role="tab" aria-selected="true" tabindex="0" data-provider="google">Google News</div>
+              <div id="tabBing" class="tab" role="tab" aria-selected="false" tabindex="-1" data-provider="bing">Bing News</div>
+            </div>
+            <div class="hint" id="providerHint" style="margin-top:8px">Google → períodos como <span class="pill">6h</span>, <span class="pill">7d</span>, <span class="pill">1y</span></div>
           </div>
-          <div class="hint">Se ativo, o backend tenta preencher <span class="mono">content</span> com o texto da matéria.</div>
+
+          <!-- Busca -->
+          <div class="section">
+            <div class="section-title">Busca</div>
+
+            <div class="row">
+              <label for="keywords">Keywords (lista)</label>
+              <div>
+                <textarea id="keywords" placeholder="Ex.: IA, open banking"></textarea>
+                <div class="hint">Separe por vírgulas, ponto-e-vírgulas ou nova linha.</div>
+              </div>
+            </div>
+
+            <div class="row">
+              <label for="keywordsExact">Keywords exatas</label>
+              <div>
+                <textarea id="keywordsExact" placeholder='Ex.: "inteligência artificial generativa"'></textarea>
+              </div>
+            </div>
+
+            <div class="row">
+              <label for="sites">Sites (domínios)</label>
+              <div>
+                <textarea id="sites" placeholder="Ex.: exame.com, tecmundo.com.br"></textarea>
+                <div class="hint">Apenas domínio, sem http/https e sem paths.</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Filtros -->
+          <div class="section">
+            <div class="section-title">Filtros</div>
+
+            <div class="row two-cols">
+              <label for="lang">Idioma</label>
+              <select id="lang">
+                <option value="pt-BR" selected>Português (Brasil)</option>
+                <option value="en-US">English (US)</option>
+              </select>
+
+              <label for="n">Limite / combinação</label>
+              <input type="number" id="n" min="1" max="50" value="5" />
+            </div>
+
+            <div class="row">
+              <label for="period">Período</label>
+              <div>
+                <input type="text" id="period" placeholder="Google: 6h/7d/1y • Bing: 4/7/8/9" />
+                <div class="chips" id="periodChips" style="margin-top:8px"></div>
+                <div class="hint" id="hintPeriod">Google → 1h..24h, 1d..30d, 1y</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Base & Content -->
+          <div class="section">
+            <div class="section-title">Fonte de dados & Conteúdo</div>
+            <div class="row">
+              <label for="useDb">Base</label>
+              <div class="switch">
+                <input type="checkbox" id="useDb" />
+                <span>Carregar de base (use_db)</span>
+              </div>
+            </div>
+
+            <div class="row" id="areaRow" style="display:none">
+              <label for="area">Área</label>
+              <input type="text" id="area" placeholder="ex.: financas-retail" />
+            </div>
+
+            <div class="row" id="captureRow" style="display:none">
+              <label for="captureContent">Conteúdo (Bing)</label>
+              <div class="switch">
+                <input type="checkbox" id="captureContent" checked />
+                <span>Capturar texto do artigo (content)</span>
+              </div>
+            </div>
+          </div>
         </div>
 
-      </div>
-
-      <div class="footer">
-        <div class="hint">API base: <span class="mono" id="apiUrlHint"></span></div>
-        <div class="actions">
-          <button id="btnRun" class="btn">Executar</button>
-          <button id="btnShowJson" class="btn secondary">Mostrar JSON</button>
+        <div class="toolbar-bottom">
+          <div class="api-hint">API: <span class="pill mono" id="apiUrlHint"></span></div>
+          <div>
+            <button id="btnRun" class="btn primary">Executar</button>
+            <button id="btnShowJson" class="btn">JSON</button>
+          </div>
         </div>
-      </div>
 
-      <details id="jsonPanel" class="json">
-        <summary>Request & Response (JSON)</summary>
-        <pre id="jsonOut" class="mono">{}</pre>
-      </details>
+        <details id="jsonPanel" class="json-panel">
+          <summary>Request & Response</summary>
+          <pre id="jsonOut" class="mono">{}</pre>
+        </details>
+      </section>
 
-      <div id="results" class="results"></div>
+      <!-- RESULTS -->
+      <section class="panel" aria-label="Resultados">
+        <div class="panel-h">
+          <div class="panel-title">Resultados</div>
+          <div class="panel-kpis">
+            <span class="pill">Cards: <b id="cardsCount">0</b></span>
+          </div>
+        </div>
+        <div id="results" class="results">
+          <!-- skeletons iniciais -->
+          <div class="card">
+            <div class="thumb skeleton"></div>
+            <div>
+              <div class="skeleton" style="height:18px; width:65%; border-radius:8px"></div>
+              <div style="display:flex; gap:8px; margin:10px 0">
+                <div class="skeleton" style="height:16px; width:90px; border-radius:999px"></div>
+                <div class="skeleton" style="height:16px; width:70px; border-radius:999px"></div>
+                <div class="skeleton" style="height:16px; width:80px; border-radius:999px"></div>
+              </div>
+              <div class="skeleton" style="height:12px; width:85%; border-radius:8px"></div>
+              <div class="skeleton" style="height:12px; width:60%; border-radius:8px; margin-top:6px"></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="thumb skeleton"></div>
+            <div>
+              <div class="skeleton" style="height:18px; width:55%; border-radius:8px"></div>
+              <div style="display:flex; gap:8px; margin:10px 0">
+                <div class="skeleton" style="height:16px; width:80px; border-radius:999px"></div>
+                <div class="skeleton" style="height:16px; width:70px; border-radius:999px"></div>
+              </div>
+              <div class="skeleton" style="height:12px; width:90%; border-radius:8px"></div>
+              <div class="skeleton" style="height:12px; width:65%; border-radius:8px; margin-top:6px"></div>
+            </div>
+          </div>
+        </div>
+      </section>
     </div>
 
-    <p class="hint" style="margin-top:14px">
-      Dicas: em <span class="mono">Google</span>, use períodos como <span class="mono">6h</span>, <span class="mono">7d</span> ou <span class="mono">1y</span>.
-      Em <span class="mono">Bing</span>, use <span class="mono">4</span> (24h), <span class="mono">7</span> (semana), <span class="mono">8</span> (mês), <span class="mono">9</span> (ano).
+    <p class="hint" style="margin-top:12px">
+      Dicas: no <b>Google</b> use períodos como <span class="pill">6h</span>, <span class="pill">3d</span>, <span class="pill">1y</span>. No <b>Bing</b> use <span class="pill">4</span> (24h), <span class="pill">7</span> (semana), <span class="pill">8</span> (mês), <span class="pill">9</span> (ano).
     </p>
   </div>
 
-  <div id="toast" class="toast" style="display:none"></div>
+  <div id="toast" class="toast"><span class="dot"></span><span id="toastMsg">Mensagem</span></div>
 
 <script>
-  // ========================= CONFIG =========================
-  // Se a API estiver em outro host (ex.: http://localhost:8000), defina aqui:
-  const BASE_API_URL = ""; // vazio = mesmo host do GitHub Pages via proxy/reverse; ou set ex.: "http://localhost:8000"
-  const ENDPOINTS = {
-    google: "/v2/scrape/google",
-    bing: "/v2/scrape/bing"
-  };
+  // ============================ CONFIG ============================
+  // API base — ajuste se necessário (ex.: "http://localhost:8000")
+  const BASE_API_URL = ""; // vazio = mesmo host (se fizer proxy). Caso contrário, set.
+  const ENDPOINTS = { google: "/v2/scrape/google", bing: "/v2/scrape/bing" };
 
-  // ========================= STATE/DOM ======================
-  const $ = (sel) => document.querySelector(sel);
-  const providerEl = $("#provider");
-  const langEl = $("#lang");
-  const keywordsEl = $("#keywords");
-  const keywordsExactEl = $("#keywordsExact");
-  const sitesEl = $("#sites");
-  const nEl = $("#n");
-  const periodEl = $("#period");
-  const hintPeriodEl = $("#hintPeriod");
-  const useDbEl = $("#useDb");
-  const areaWrapEl = $("#areaWrap");
-  const areaEl = $("#area");
-  const captureWrapEl = $("#captureWrap");
-  const captureEl = $("#captureContent");
+  // ============================ DOM / STATE =======================
+  const $ = sel => document.querySelector(sel);
+  const statusEl = $("#status"), kpiCountEl = $("#kpiCount"), kpiTimeEl = $("#kpiTime");
+  const cardsCountEl = $("#cardsCount"), resultsEl = $("#results"), jsonOutEl = $("#jsonOut");
+  const jsonPanelEl = $("#jsonPanel"), apiUrlHintEl = $("#apiUrlHint"), toastEl = $("#toast"), toastMsgEl=$("#toastMsg");
 
-  const statusEl = $("#status");
-  const kpiCountEl = $("#kpiCount");
-  const kpiTimeEl = $("#kpiTime");
-  const resultsEl = $("#results");
-  const jsonPanelEl = $("#jsonPanel");
-  const jsonOutEl = $("#jsonOut");
-  const apiUrlHintEl = $("#apiUrlHint");
-  const toastEl = $("#toast");
+  const tabGoogle = $("#tabGoogle"), tabBing = $("#tabBing");
+  const providerHintEl = $("#providerHint"), hintPeriodEl = $("#hintPeriod"), periodChipsEl = $("#periodChips");
 
-  const btnRun = $("#btnRun");
-  const btnShowJson = $("#btnShowJson");
-  const btnReset = $("#btnReset");
-  const btnSampleGoogle = $("#btnSampleGoogle");
-  const btnSampleBing = $("#btnSampleBing");
+  const keywordsEl = $("#keywords"), keywordsExactEl = $("#keywordsExact"), sitesEl = $("#sites");
+  const langEl = $("#lang"), nEl = $("#n"), periodEl = $("#period");
+  const useDbEl = $("#useDb"), areaRowEl = $("#areaRow"), areaEl = $("#area");
+  const captureRowEl = $("#captureRow"), captureEl = $("#captureContent");
 
-  // Regex de validação de período
-  const RX_GOOGLE = /^(([1-9]|1\\d|2[0-4])h|([1-9]|[12]\\d|30)d|1y)$/; // 1..24h, 1..30d, 1y
+  const btnRun = $("#btnRun"), btnShowJson = $("#btnShowJson"), btnReset = $("#btnReset");
+  const btnSampleGoogle = $("#btnSampleGoogle"), btnSampleBing = $("#btnSampleBing");
+
+  let provider = "google";
+
+  const RX_GOOGLE = /^(([1-9]|1\d|2[0-4])h|([1-9]|[12]\d|30)d|1y)$/; // 1..24h, 1..30d, 1y
   const RX_BING = /^(4|7|8|9)$/;
 
-  function parseListInput(v){
-    if(!v) return [];
-    return v.split(/[,\\n;]+/).map(s=>s.trim()).filter(Boolean);
-  }
-
-  function toast(msg, type){
-    toastEl.textContent = msg;
+  function toast(msg, type){ // type: "", "warn", "danger"
+    toastMsgEl.textContent = msg;
     toastEl.className = "toast" + (type ? " " + type : "");
-    toastEl.style.display = "flex";
-    setTimeout(()=>{ toastEl.style.display = "none"; }, 3500);
+    toastEl.classList.add("show");
+    setTimeout(()=> toastEl.classList.remove("show"), 3500);
   }
 
-  function setStatus(text){ statusEl.textContent = text; }
+  function setStatus(t){ statusEl.textContent = t; }
 
-  function providerChanged(){
-    const p = providerEl.value;
-    if(p === "bing"){
-      captureWrapEl.style.display = "block";
-      hintPeriodEl.textContent = "Bing → 4 (24h), 7 (semana), 8 (mês), 9 (ano)";
-      if (!RX_BING.test(periodEl.value || "")) periodEl.placeholder = "4/7/8/9";
-    }else{
-      captureWrapEl.style.display = "none";
+  function setProvider(p){
+    provider = p;
+    if(p === "google"){
+      tabGoogle.classList.add("active"); tabGoogle.setAttribute("aria-selected","true"); tabGoogle.tabIndex = 0;
+      tabBing.classList.remove("active"); tabBing.setAttribute("aria-selected","false"); tabBing.tabIndex = -1;
+      captureRowEl.style.display = "none";
+      providerHintEl.innerHTML = 'Google → períodos como <span class="pill">6h</span>, <span class="pill">7d</span>, <span class="pill">1y</span>';
       hintPeriodEl.textContent = "Google → 1h..24h, 1d..30d, 1y";
-      if (!RX_GOOGLE.test(periodEl.value || "")) periodEl.placeholder = "6h/7d/1y";
+      renderPeriodChips(["6h","12h","1d","7d","30d","1y"]);
+      if(!RX_GOOGLE.test(periodEl.value||"")) periodEl.placeholder = "6h/7d/1y";
+    }else{
+      tabBing.classList.add("active"); tabBing.setAttribute("aria-selected","true"); tabBing.tabIndex = 0;
+      tabGoogle.classList.remove("active"); tabGoogle.setAttribute("aria-selected","false"); tabGoogle.tabIndex = -1;
+      captureRowEl.style.display = "block";
+      providerHintEl.innerHTML = 'Bing → <span class="pill">4</span> (24h) <span class="pill">7</span> (semana) <span class="pill">8</span> (mês) <span class="pill">9</span> (ano)';
+      hintPeriodEl.textContent = "Bing → 4, 7, 8, 9";
+      renderPeriodChips(["4","7","8","9"]);
+      if(!RX_BING.test(periodEl.value||"")) periodEl.placeholder = "4/7/8/9";
     }
   }
 
+  function renderPeriodChips(values){
+    periodChipsEl.innerHTML = "";
+    values.forEach(v=>{
+      const chip = document.createElement("button");
+      chip.type = "button";
+      chip.className = "chip";
+      chip.textContent = v;
+      chip.addEventListener("click", ()=> periodEl.value = v);
+      periodChipsEl.appendChild(chip);
+    });
+  }
+
+  function parseListInput(v){
+    if(!v) return [];
+    return v.split(/[,;\n]+/).map(s=>s.trim()).filter(Boolean);
+  }
+
   function useDbChanged(){
-    areaWrapEl.style.display = useDbEl.checked ? "block" : "none";
+    areaRowEl.style.display = useDbEl.checked ? "grid" : "none";
   }
 
   function buildPayload(){
-    const provider = providerEl.value;
     const payload = {
       keywords: parseListInput(keywordsEl.value),
       keywords_exact: parseListInput(keywordsExactEl.value),
       sites: parseListInput(sitesEl.value),
       lang: langEl.value,
-      period: (periodEl.value || "").trim(),
-      n: Number(nEl.value || 5),
+      period: (periodEl.value||"").trim(),
+      n: Number(nEl.value||5),
       use_db: !!useDbEl.checked,
       capture_content: provider === "bing" ? !!captureEl.checked : false,
-      area: useDbEl.checked ? (areaEl.value || "").trim() : null
+      area: useDbEl.checked ? (areaEl.value||"").trim() : null
     };
-    return { provider, payload };
+    return payload;
   }
 
-  function validate({provider, payload}){
-    // period por provedor
+  function validate(payload){
     if(provider === "google" && !RX_GOOGLE.test(payload.period)){
       throw new Error("Período inválido para Google. Use 1h..24h, 1d..30d ou 1y.");
     }
     if(provider === "bing" && !RX_BING.test(payload.period)){
-      throw new Error("Período inválido para Bing. Use 4 (24h), 7 (semana), 8 (mês) ou 9 (ano).");
+      throw new Error("Período inválido para Bing. Use 4(24h), 7(semana), 8(mês) ou 9(ano).");
     }
     if(!payload.use_db && !(payload.keywords.length || payload.keywords_exact.length || payload.sites.length)){
       throw new Error("Informe keywords/keywords_exact/sites ou defina use_db=true.");
@@ -342,58 +463,83 @@
     }
   }
 
+  function escapeHtml(s){
+    return String(s).replace(/[&<>\"']/g, c=>({ "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;" }[c]));
+  }
+
+  function renderSkeletons(){
+    resultsEl.innerHTML = "";
+    for(let i=0;i<3;i++){
+      const s = document.createElement("div");
+      s.className = "card";
+      s.innerHTML = `
+        <div class="thumb skeleton"></div>
+        <div>
+          <div class="skeleton" style="height:18px; width:${60-i*8}% ; border-radius:8px"></div>
+          <div style="display:flex; gap:8px; margin:10px 0">
+            <div class="skeleton" style="height:16px; width:90px; border-radius:999px"></div>
+            <div class="skeleton" style="height:16px; width:70px; border-radius:999px"></div>
+            <div class="skeleton" style="height:16px; width:80px; border-radius:999px"></div>
+          </div>
+          <div class="skeleton" style="height:12px; width:85%; border-radius:8px"></div>
+          <div class="skeleton" style="height:12px; width:60%; border-radius:8px; margin-top:6px"></div>
+        </div>`;
+      resultsEl.appendChild(s);
+    }
+    cardsCountEl.textContent = "0";
+  }
+
   function renderResults(items){
     resultsEl.innerHTML = "";
     if(!items || !items.length){
-      resultsEl.innerHTML = "<div class='hint'>Nenhum resultado retornado.</div>";
+      resultsEl.innerHTML = `<div class="hint">Nenhum resultado retornado.</div>`;
+      cardsCountEl.textContent = "0";
       return;
     }
-    // grid de cartões
+    cardsCountEl.textContent = String(items.length);
+
     for(const it of items){
       const hasImg = !!it.link_image;
       const hasContent = !!it.content;
 
       const card = document.createElement("div");
-      card.className = "result-card";
+      card.className = "card";
 
       const img = document.createElement("img");
-      img.className = "result-img";
+      img.className = "thumb";
       img.alt = it.title || "imagem";
-      img.src = hasImg ? it.link_image : "data:image/svg+xml;utf8," + encodeURIComponent(
-        `<svg xmlns='http://www.w3.org/2000/svg' width='110' height='110'><rect width='100%' height='100%' fill='#0b0b0f'/><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' font-size='12' fill='#6b7280'>sem imagem</text></svg>`
-      );
+      img.src = hasImg ? it.link_image :
+        "data:image/svg+xml;utf8," + encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'>
+          <rect width='100%' height='100%' fill='#0b0f16'/>
+          <text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' font-size='12' fill='#6b7280'>sem imagem</text>
+        </svg>`);
 
       const right = document.createElement("div");
-      const h3 = document.createElement("div");
-      h3.className = "result-title";
-      h3.innerHTML = `<a href="${it.link_news}" target="_blank" rel="noopener">${escapeHtml(it.title || "-")}</a>`;
+
+      const title = document.createElement("div");
+      title.className = "title";
+      title.innerHTML = `<a href="${it.link_news}" target="_blank" rel="noopener">${escapeHtml(it.title || "-")}</a>`;
 
       const meta = document.createElement("div");
       meta.className = "meta";
-      const b1 = `<span class="badge">${escapeHtml(it.font || "fonte desconhecida")}</span>`;
-      const b2 = `<span class="badge">${escapeHtml(it.date || "-")}</span>`;
-      const b3 = it.keyword ? `<span class="badge">kw: ${escapeHtml(it.keyword)}</span>` : "";
-      meta.innerHTML = b1 + b2 + b3;
+      meta.innerHTML = `
+        <span class="badge">${escapeHtml(it.font || "fonte desconhecida")}</span>
+        <span class="badge">${escapeHtml(it.date || "-")}</span>
+        ${it.keyword ? `<span class="badge">kw: ${escapeHtml(it.keyword)}</span>` : ""}
+      `;
 
       const desc = document.createElement("div");
-      desc.className = "hint";
+      desc.className = "desc";
       desc.textContent = it.descript || "";
 
-      right.appendChild(h3);
-      right.appendChild(meta);
-      right.appendChild(desc);
+      const content = document.createElement("div");
+      content.className = "content " + (hasContent ? "" : "empty");
+      content.textContent = hasContent ? it.content : "Sem conteúdo extraído (ou não solicitado).";
 
-      if(hasContent){
-        const content = document.createElement("div");
-        content.className = "content";
-        content.textContent = it.content;
-        right.appendChild(content);
-      }else{
-        const content = document.createElement("div");
-        content.className = "content empty";
-        content.textContent = "Sem conteúdo extraído (ou não solicitado).";
-        right.appendChild(content);
-      }
+      right.appendChild(title);
+      right.appendChild(meta);
+      if (it.descript) right.appendChild(desc);
+      right.appendChild(content);
 
       card.appendChild(img);
       card.appendChild(right);
@@ -401,55 +547,50 @@
     }
   }
 
-  function escapeHtml(s){
-    return String(s).replace(/[&<>\"']/g, (c)=>({ "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;" }[c]));
-  }
-
   async function run(){
     try{
-      const { provider, payload } = buildPayload();
-      validate({provider, payload});
+      const payload = buildPayload();
+      validate(payload);
 
       setStatus("executando…");
       kpiCountEl.textContent = "0";
       kpiTimeEl.textContent = "-";
-      resultsEl.innerHTML = "";
+      renderSkeletons();
       jsonOutEl.textContent = "{}";
 
       const url = (BASE_API_URL || "") + ENDPOINTS[provider];
       const started = performance.now();
+
       const res = await fetch(url, {
-        method: "POST",
-        headers: { "content-type": "application/json" },
+        method:"POST",
+        headers:{"content-type":"application/json"},
         body: JSON.stringify(payload)
       });
 
       const elapsed = Math.round(performance.now() - started);
-      let data, text;
+      let data, raw;
       try{
-        text = await res.text();
-        data = text ? JSON.parse(text) : null;
+        raw = await res.text();
+        data = raw ? JSON.parse(raw) : null;
       }catch(e){
-        // resposta pode não ser JSON em erro
-        data = { error: text || res.statusText };
+        data = { error: raw || res.statusText };
       }
 
-      jsonOutEl.textContent = JSON.stringify({ request: { url, payload }, response: data }, null, 2);
+      jsonOutEl.textContent = JSON.stringify({ request:{ url, payload }, response:data }, null, 2);
+      kpiTimeEl.textContent = elapsed + " ms";
+
       if(!res.ok){
         setStatus("erro");
-        kpiTimeEl.textContent = elapsed + " ms";
         toast(`Erro ${res.status}: ${res.statusText}`, "danger");
+        resultsEl.innerHTML = `<div class="hint">Falha ao consultar a API.</div>`;
         return;
       }
 
       const items = (data && data.results) || [];
       setStatus("ok");
       kpiCountEl.textContent = String(items.length);
-      kpiTimeEl.textContent = elapsed + " ms";
       renderResults(items);
-      if(items.length === 0){
-        toast("Requisição concluída, porém sem resultados.", "warn");
-      }
+      if(!items.length) toast("Requisição concluída, porém sem resultados.", "warn");
     }catch(err){
       setStatus("erro");
       toast(err.message || String(err), "danger");
@@ -457,64 +598,52 @@
   }
 
   function fillSampleGoogle(){
-    providerEl.value = "google";
-    providerChanged();
-    langEl.value = "pt-BR";
+    setProvider("google");
     keywordsEl.value = "IA, machine learning";
     keywordsExactEl.value = "";
     sitesEl.value = "";
-    nEl.value = 5;
     periodEl.value = "6h";
-    useDbEl.checked = false;
-    useDbChanged();
+    langEl.value = "pt-BR"; nEl.value = 5;
+    useDbEl.checked = false; useDbChanged();
   }
 
   function fillSampleBing(){
-    providerEl.value = "bing";
-    providerChanged();
-    langEl.value = "pt-BR";
+    setProvider("bing");
     keywordsEl.value = "IA";
     keywordsExactEl.value = "";
     sitesEl.value = "";
-    nEl.value = 5;
     periodEl.value = "7";
-    useDbEl.checked = false;
-    useDbChanged();
-    captureEl.checked = true;
-  }
-
-  function resetForm(e){
-    if(e) e.preventDefault();
-    document.querySelector("form")?.reset?.();
-    providerEl.value = "google"; providerChanged();
-    langEl.value = "pt-BR";
-    keywordsEl.value = "";
-    keywordsExactEl.value = "";
-    sitesEl.value = "";
-    nEl.value = 5;
-    periodEl.value = "";
+    langEl.value = "pt-BR"; nEl.value = 5;
     useDbEl.checked = false; useDbChanged();
     captureEl.checked = true;
-    setStatus("pronto");
-    kpiCountEl.textContent = "0";
-    kpiTimeEl.textContent = "-";
-    resultsEl.innerHTML = "";
-    jsonOutEl.textContent = "{}";
   }
 
-  // ========================= INIT ============================
-  apiUrlHintEl.textContent = (BASE_API_URL || "(mesmo host)") + "  •  " + ENDPOINTS.google + " | " + ENDPOINTS.bing;
+  function resetForm(){
+    setProvider("google");
+    keywordsEl.value = ""; keywordsExactEl.value = ""; sitesEl.value = "";
+    periodEl.value = ""; langEl.value = "pt-BR"; nEl.value = 5;
+    useDbEl.checked = false; useDbChanged();
+    captureEl.checked = true;
+    resultsEl.innerHTML = "";
+    kpiCountEl.textContent = "0"; kpiTimeEl.textContent = "-"; setStatus("pronto");
+    jsonOutEl.textContent = "{}";
+    renderSkeletons();
+  }
 
-  providerEl.addEventListener("change", providerChanged);
+  // Init
+  tabGoogle.addEventListener("click", ()=> setProvider("google"));
+  tabBing.addEventListener("click", ()=> setProvider("bing"));
   useDbEl.addEventListener("change", useDbChanged);
-  btnRun.addEventListener("click", run);
-  btnReset.addEventListener("click", resetForm);
-  btnShowJson.addEventListener("click", ()=> jsonPanelEl.open = !jsonPanelEl.open );
+  $("#btnRun").addEventListener("click", run);
+  $("#btnShowJson").addEventListener("click", ()=> jsonPanelEl.open = !jsonPanelEl.open );
   btnSampleGoogle.addEventListener("click", fillSampleGoogle);
   btnSampleBing.addEventListener("click", fillSampleBing);
+  btnReset.addEventListener("click", resetForm);
 
-  providerChanged(); useDbChanged();
-
+  apiUrlHintEl.textContent = (BASE_API_URL || "(mesmo host)") + " • " + ENDPOINTS.google + " | " + ENDPOINTS.bing;
+  setProvider("google");
+  useDbChanged();
+  renderSkeletons();
 </script>
 </body>
 </html>
