@@ -1,505 +1,520 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>SinalizaRTT · IA Trends Recommender</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <meta name="color-scheme" content="light dark" />
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <style>
-    html { font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji"; }
-    .glass { backdrop-filter: blur(10px); background: rgba(255,255,255,.65); }
-    @media (prefers-color-scheme: dark) { .glass { background: rgba(17,24,39,.55); } }
-    .code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
-  </style>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Scrape Playground — Google/Bing News</title>
+<meta name="color-scheme" content="light dark" />
+<style>
+  :root{
+    --bg: #0b0c10;
+    --card: #111218;
+    --muted: #b8bcca;
+    --text: #e9edf4;
+    --primary: #6aa6ff;
+    --primary-600:#4e8ef5;
+    --accent: #6cf0b3;
+    --danger:#ff5d6c;
+    --warn:#ffca64;
+    --border:#232532;
+  }
+  @media (prefers-color-scheme: light) {
+    :root{
+      --bg:#f6f7fb; --card:#ffffff; --muted:#5a6475; --text:#0f172a;
+      --primary:#2563eb; --primary-600:#1d4ed8; --accent:#10b981;
+      --danger:#ef4444; --warn:#f59e0b; --border:#e5e7eb;
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0; font:16px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,"Helvetica Neue",Arial,"Apple Color Emoji","Segoe UI Emoji";
+    background:linear-gradient(180deg,var(--bg),#0d0e14 45%,var(--bg));
+    color:var(--text);
+  }
+  .container{max-width:1100px;margin:32px auto;padding:0 16px}
+  .header{
+    display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:18px;
+  }
+  .title{font-size:22px;font-weight:700;letter-spacing:.2px}
+  .subtitle{color:var(--muted);font-size:14px}
+  .card{
+    background:var(--card);border:1px solid var(--border);
+    border-radius:16px;box-shadow:0 10px 25px rgba(0,0,0,.18);overflow:hidden;
+  }
+  .card-header{padding:16px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:12px}
+  .card-title{font-weight:600}
+  .grid{display:grid;gap:16px}
+  @media (min-width: 960px){ .grid-cols-2{grid-template-columns:1fr 1fr} }
+  .row{display:grid;grid-template-columns:160px 1fr;gap:14px;align-items:center}
+  .field{display:flex;flex-direction:column;gap:6px}
+  label{font-size:13px;color:var(--muted)}
+  input[type="text"], input[type="number"], textarea, select{
+    width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:12px;background:#0f1118;color:var(--text);
+    outline:none;transition:box-shadow .15s,border-color .15s;
+  }
+  @media (prefers-color-scheme: light){
+    input[type="text"], input[type="number"], textarea, select{background:#fff}
+  }
+  input:focus, textarea:focus, select:focus{border-color:var(--primary);box-shadow:0 0 0 4px color-mix(in oklab, var(--primary) 20%, transparent)}
+  textarea{min-height:74px;resize:vertical}
+  .hint{font-size:12px;color:var(--muted)}
+  .switch{
+    display:inline-flex;align-items:center;gap:10px;padding:6px 10px;border:1px solid var(--border);border-radius:999px;background:transparent;
+  }
+  .switch input{accent-color:var(--primary);transform:scale(1.2)}
+  .btn{
+    appearance:none;border:0;border-radius:12px;padding:10px 14px;font-weight:600;cursor:pointer;transition:transform .05s ease,filter .2s;
+    background:var(--primary);color:white;box-shadow:inset 0 -2px 0 rgba(0,0,0,.2), 0 6px 18px rgba(37,99,235,.25);
+  }
+  .btn:hover{filter:brightness(1.05)}
+  .btn:active{transform:translateY(1px)}
+  .btn.secondary{background:transparent;color:var(--text);border:1px solid var(--border);box-shadow:none}
+  .btn.warn{background:var(--warn);color:#222}
+  .btn.danger{background:var(--danger)}
+  .actions{display:flex;flex-wrap:wrap;gap:10px}
+  .kpi{display:flex;gap:12px;flex-wrap:wrap}
+  .pill{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--border);background:transparent;border-radius:999px;padding:8px 10px;font-size:13px;color:var(--muted)}
+  .mono{font-family: ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,\"Liberation Mono\",\"Courier New\",monospace}
+  .results{
+    display:grid;gap:14px;padding:14px;border-top:1px solid var(--border);background:
+      linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0));
+  }
+  @media (min-width: 860px){ .results{grid-template-columns:1fr 1fr} }
+  .result-card{
+    border:1px solid var(--border);border-radius:14px;background:#0f1118;padding:12px;display:grid;grid-template-columns:110px 1fr;gap:12px;align-items:start
+  }
+  @media (prefers-color-scheme: light){ .result-card{background:#fff} }
+  .result-img{
+    width:110px;height:110px;border-radius:10px;object-fit:cover;background:#0b0b0f;border:1px solid var(--border)
+  }
+  .result-title a{color:var(--text);text-decoration:none}
+  .result-title a:hover{text-decoration:underline;color:var(--primary)}
+  .meta{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0}
+  .badge{font-size:11px;border:1px solid var(--border);border-radius:999px;padding:2px 8px;color:var(--muted)}
+  .content{
+    margin-top:6px;border:1px dashed var(--border);border-radius:10px;padding:10px;max-height:140px;overflow:auto;white-space:pre-wrap;background:linear-gradient(180deg, rgba(255,255,255,.02), rgba(255,255,255,0));
+  }
+  .content.empty{color:var(--muted);font-style:italic}
+  .footer{
+    display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px;border-top:1px solid var(--border);
+  }
+  details.json{
+    background:#0f1118;border-top:1px solid var(--border);padding:10px 14px;
+  }
+  details.json pre{
+    margin:10px 0 0;white-space:pre-wrap;word-break:break-word;background:#0b0b0f;border:1px solid var(--border);border-radius:12px;padding:12px;
+    color:var(--text);max-height:420px;overflow:auto;
+  }
+  .toast{
+    position:fixed;right:16px;bottom:16px;background:#10131a;border:1px solid var(--border);color:var(--text);padding:10px 12px;border-radius:12px;
+    box-shadow:0 10px 25px rgba(0,0,0,.25);display:flex;gap:10px;align-items:center;
+  }
+  .toast.warn{border-color:var(--warn)}
+  .toast.danger{border-color:var(--danger)}
+  .link{color:var(--primary);text-decoration:none}
+  .link:hover{text-decoration:underline}
+</style>
 </head>
-<body class="min-h-screen bg-gradient-to-br from-slate-50 via-sky-50 to-indigo-50 dark:from-slate-900 dark:via-slate-950 dark:to-indigo-950 text-slate-800 dark:text-slate-100">
-  <!-- Header -->
-  <header class="px-6 py-6">
-    <div class="mx-auto max-w-6xl flex items-center justify-between">
-      <div class="flex items-center gap-3">
-        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" class="drop-shadow">
-          <defs>
-            <linearGradient id="g" x1="0" y1="0" x2="24" y2="24" gradientUnits="userSpaceOnUse">
-              <stop stop-color="#22d3ee"/><stop offset="1" stop-color="#6366f1"/>
-            </linearGradient>
-          </defs>
-          <path d="M12 2l8 4v6c0 5-3.5 8-8 10-4.5-2-8-5-8-10V6l8-4Z" fill="url(#g)"/>
-          <path d="M8.5 10.5 12 7l3.5 3.5M12 7v9" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-        <h1 class="text-xl font-semibold tracking-tight">SinalizaRTT</h1>
-        <span class="ml-2 text-xs px-2 py-1 rounded-full bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-200">Frontend</span>
+<body>
+  <div class="container">
+    <div class="header">
+      <div>
+        <div class="title">Scrape Playground</div>
+        <div class="subtitle">Teste os endpoints <span class="mono">/v2/scrape/google</span> e <span class="mono">/v2/scrape/bing</span></div>
       </div>
-      <a href="https://github.com/" target="_blank" class="text-sm opacity-80 hover:opacity-100 underline underline-offset-4">Abrir no GitHub</a>
+      <div class="actions">
+        <button id="btnSampleGoogle" class="btn secondary">Exemplo Google</button>
+        <button id="btnSampleBing" class="btn secondary">Exemplo Bing</button>
+        <a href="#" id="btnReset" class="btn warn">Limpar</a>
+      </div>
     </div>
-  </header>
 
-  <main class="px-6 pb-24">
-    <div class="mx-auto max-w-6xl grid grid-cols-1 lg:grid-cols-3 gap-6">
-      <!-- Left: Form -->
-      <section class="lg:col-span-1">
-        <div class="glass rounded-2xl shadow-xl ring-1 ring-black/5 dark:ring-white/10 p-6">
-          <h2 class="text-lg font-semibold mb-3">Envie um objetivo</h2>
-          <p class="text-sm text-slate-600 dark:text-slate-300 mb-4">
-            Descreva o que você quer alcançar. O agente de IA retornará tendências recomendadas alinhadas ao objetivo informado.
-          </p>
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">Parâmetros</div>
+        <div class="kpi">
+          <span class="pill">Status: <strong id="status">pronto</strong></span>
+          <span class="pill">Itens: <strong id="kpiCount">0</strong></span>
+          <span class="pill">Tempo: <strong id="kpiTime">-</strong></span>
+        </div>
+      </div>
 
-          <label for="apiUrl" class="block text-xs font-medium text-slate-600 dark:text-slate-300 mb-1">
-            Endpoint da API (/sinalizartt)
-          </label>
-          <div class="flex gap-2 mb-4">
-            <input id="apiUrl" type="url" class="w-full rounded-xl border border-slate-300/70 dark:border-slate-700 bg-white/70 dark:bg-slate-900/40 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400" placeholder="http://localhost:8000/api/sinalizartt" />
-            <button id="saveApi" class="px-3 py-2 rounded-xl bg-slate-800 text-white text-xs hover:bg-slate-900 dark:bg-slate-700 dark:hover:bg-slate-600">Salvar</button>
-          </div>
-          <p class="text-[11px] text-slate-500 mb-5">
-            Dica: salve o <span class="code">endpoint completo</span> do seu backend (ex.: <span class="code">http://localhost:8000/api/sinalizartt</span>). Salvamos no <span class="code">localStorage</span>.
-          </p>
-
-          <label for="objective" class="block text-xs font-medium text-slate-600 dark:text-slate-300 mb-1">Objetivo</label>
-          <textarea id="objective" rows="5" class="w-full rounded-xl border border-slate-300/70 dark:border-slate-700 bg-white/70 dark:bg-slate-900/40 px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400" placeholder="aumentar a visibilidade e segurança do meu portal de noticias online"></textarea>
-
-          <div class="mt-3 flex flex-wrap gap-2">
-            <button data-sample class="text-xs px-2.5 py-1.5 rounded-lg bg-indigo-100 text-indigo-700 hover:bg-indigo-200 dark:bg-indigo-900/40 dark:text-indigo-200">Confiabilidade 30 dias</button>
-            <button data-sample class="text-xs px-2.5 py-1.5 rounded-lg bg-sky-100 text-sky-700 hover:bg-sky-200 dark:bg-sky-900/40 dark:text-sky-200">Aumentar autoridade</button>
-            <button data-sample class="text-xs px-2.5 py-1.5 rounded-lg bg-emerald-100 text-emerald-700 hover:bg-emerald-200 dark:bg-emerald-900/40 dark:text-emerald-200">Reduzir MTTR</button>
-          </div>
-
-          <div class="mt-6 flex items-center gap-3">
-            <button id="submit" class="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-4 py-2.5 shadow-lg shadow-indigo-600/20 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-400">
-              <svg id="spinner" class="hidden animate-spin -ml-0.5 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path></svg>
-              <span>Enviar ao Agente</span>
-            </button>
-            <button id="clear" class="px-4 py-2.5 rounded-xl border border-slate-300/70 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800">Limpar</button>
-          </div>
-
-          <p id="hint" class="mt-4 text-xs text-slate-500">Atalho: <span class="code">Ctrl+Enter</span> para enviar.</p>
+      <div class="grid grid-cols-2" style="padding:16px">
+        <div class="field">
+          <label for="provider">Provedor</label>
+          <select id="provider">
+            <option value="google">Google News</option>
+            <option value="bing">Bing News</option>
+          </select>
+          <div class="hint">Bing permite <b>capture_content</b> para texto do artigo.</div>
         </div>
 
-        <!-- Info -->
-        <div class="mt-6 glass rounded-2xl shadow-xl ring-1 ring-black/5 dark:ring-white/10 p-6">
-          <h3 class="text-sm font-semibold mb-2">Como funciona</h3>
-          <ol class="text-sm list-decimal pl-5 space-y-1 text-slate-700 dark:text-slate-200">
-            <li>Você informa um objetivo.</li>
-            <li>O frontend chama o <span class="code">endpoint</span> do seu backend.</li>
-            <li>O backend consulta o agente de IA e enriquece com o dicionário de tendências.</li>
-            <li>Se houver tendências, exibimos cartões com os campos retornados. Se não houver, exibimos somente a <span class="code">message</span> do agente e a <span class="code">data</span> da consulta.</li>
-          </ol>
+        <div class="field">
+          <label for="lang">Idioma</label>
+          <select id="lang">
+            <option value="pt-BR" selected>Português (Brasil)</option>
+            <option value="en-US">English (US)</option>
+          </select>
         </div>
-      </section>
 
-      <!-- Right: Results -->
-      <section class="lg:col-span-2">
-        <div class="glass rounded-2xl shadow- xl ring-1 ring-black/5 dark:ring-white/10 p-6">
-          <div class="flex items-center justify-between mb-4">
-            <h2 class="text-lg font-semibold">Resultado</h2>
-            <div class="flex gap-2">
-              <button id="exportJson" class="text-xs px-3 py-2 rounded-xl border border-slate-300/70 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800">Baixar JSON</button>
-              <button id="exportCsv" class="text-xs px-3 py-2 rounded-xl border border-slate-300/70 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800">Baixar CSV</button>
-              <button id="copyJson" class="text-xs px-3 py-2 rounded-xl bg-slate-800 text-white hover:bg-slate-900 dark:bg-slate-700 dark:hover:bg-slate-600">Copiar</button>
-            </div>
+        <div class="field">
+          <label for="keywords">Keywords (lista)</label>
+          <textarea id="keywords" placeholder="Ex.: IA, open banking"></textarea>
+          <div class="hint">Separar por vírgula, ponto-e-vírgula ou nova linha.</div>
+        </div>
+
+        <div class="field">
+          <label for="keywordsExact">Keywords exatas (aspas)</label>
+          <textarea id="keywordsExact" placeholder="Ex.: &quot;inteligência artificial generativa&quot;"></textarea>
+        </div>
+
+        <div class="field">
+          <label for="sites">Sites (domínios)</label>
+          <textarea id="sites" placeholder="Ex.: exame.com, tecmundo.com.br"></textarea>
+          <div class="hint">Apenas domínio, sem http/https e sem paths.</div>
+        </div>
+
+        <div class="field">
+          <div class="row">
+            <label for="n">Limite / combinação</label>
+            <input type="number" id="n" min="1" max="50" value="5" />
           </div>
-
-          <div id="resultObjective" class="text-sm text-slate-700 dark:text-slate-300 italic mb-4 hidden"></div>
-
-          <div id="cards" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
-
-          <div id="empty" class="hidden text-sm text-slate-500 py-8 text-center">Sem recomendações ainda. Envie um objetivo para começar.</div>
-
-          <div id="error" class="hidden mt-4 p-4 rounded-xl border border-red-300/60 bg-red-50 text-red-800 dark:border-red-800 dark:bg-red-950 dark:text-red-200 text-sm"></div>
+          <div class="row">
+            <label for="period">Período</label>
+            <input type="text" id="period" placeholder="Google: 6h/3d/1y | Bing: 4/7/8/9" />
+          </div>
+          <div class="hint" id="hintPeriod">Google → 1h..24h, 1d..30d, 1y</div>
         </div>
 
-        <details class="mt-6 glass rounded-2xl ring-1 ring-black/5 dark:ring-white/10 p-6">
-          <summary class="cursor-pointer font-medium">Debug da última resposta</summary>
-          <pre id="debug" class="mt-4 text-xs code whitespace-pre-wrap"></pre>
-        </details>
-      </section>
+        <div class="field">
+          <div class="switch">
+            <input type="checkbox" id="useDb" />
+            <label for="useDb">Carregar dados da base (use_db)</label>
+          </div>
+          <div id="areaWrap" class="field" style="margin-top:8px;display:none">
+            <label for="area">Área (obrigatório se usar base)</label>
+            <input type="text" id="area" placeholder="ex.: financas-retail" />
+          </div>
+        </div>
+
+        <div class="field" id="captureWrap" style="display:none">
+          <div class="switch">
+            <input type="checkbox" id="captureContent" checked />
+            <label for="captureContent">Capturar conteúdo do artigo (Bing)</label>
+          </div>
+          <div class="hint">Se ativo, o backend tenta preencher <span class="mono">content</span> com o texto da matéria.</div>
+        </div>
+
+      </div>
+
+      <div class="footer">
+        <div class="hint">API base: <span class="mono" id="apiUrlHint"></span></div>
+        <div class="actions">
+          <button id="btnRun" class="btn">Executar</button>
+          <button id="btnShowJson" class="btn secondary">Mostrar JSON</button>
+        </div>
+      </div>
+
+      <details id="jsonPanel" class="json">
+        <summary>Request & Response (JSON)</summary>
+        <pre id="jsonOut" class="mono">{}</pre>
+      </details>
+
+      <div id="results" class="results"></div>
     </div>
-  </main>
 
-  <script>
-    // ===== Helpers =====
-    const $ = (sel) => document.querySelector(sel);
-    const apiUrlInput = $('#apiUrl');
-    const saveApiBtn = $('#saveApi');
-    const objectiveInput = $('#objective');
-    const submitBtn = $('#submit');
-    const clearBtn = $('#clear');
-    const spinner = $('#spinner');
-    const cards = $('#cards');
-    const errorBox = $('#error');
-    const emptyBox = $('#empty');
-    const resultObjective = $('#resultObjective');
-    const debugPre = $('#debug');
-    const exportJsonBtn = $('#exportJson');
-    const exportCsvBtn = $('#exportCsv');
-    const copyJsonBtn = $('#copyJson');
+    <p class="hint" style="margin-top:14px">
+      Dicas: em <span class="mono">Google</span>, use períodos como <span class="mono">6h</span>, <span class="mono">7d</span> ou <span class="mono">1y</span>.
+      Em <span class="mono">Bing</span>, use <span class="mono">4</span> (24h), <span class="mono">7</span> (semana), <span class="mono">8</span> (mês), <span class="mono">9</span> (ano).
+    </p>
+  </div>
 
-    const STORAGE_KEY = 'sinaliza.endpoint';
+  <div id="toast" class="toast" style="display:none"></div>
 
-    function loadApiBase() {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      apiUrlInput.value = saved || 'http://localhost:8000/api/sinalizartt';
+<script>
+  // ========================= CONFIG =========================
+  // Se a API estiver em outro host (ex.: http://localhost:8000), defina aqui:
+  const BASE_API_URL = ""; // vazio = mesmo host do GitHub Pages via proxy/reverse; ou set ex.: "http://localhost:8000"
+  const ENDPOINTS = {
+    google: "/v2/scrape/google",
+    bing: "/v2/scrape/bing"
+  };
+
+  // ========================= STATE/DOM ======================
+  const $ = (sel) => document.querySelector(sel);
+  const providerEl = $("#provider");
+  const langEl = $("#lang");
+  const keywordsEl = $("#keywords");
+  const keywordsExactEl = $("#keywordsExact");
+  const sitesEl = $("#sites");
+  const nEl = $("#n");
+  const periodEl = $("#period");
+  const hintPeriodEl = $("#hintPeriod");
+  const useDbEl = $("#useDb");
+  const areaWrapEl = $("#areaWrap");
+  const areaEl = $("#area");
+  const captureWrapEl = $("#captureWrap");
+  const captureEl = $("#captureContent");
+
+  const statusEl = $("#status");
+  const kpiCountEl = $("#kpiCount");
+  const kpiTimeEl = $("#kpiTime");
+  const resultsEl = $("#results");
+  const jsonPanelEl = $("#jsonPanel");
+  const jsonOutEl = $("#jsonOut");
+  const apiUrlHintEl = $("#apiUrlHint");
+  const toastEl = $("#toast");
+
+  const btnRun = $("#btnRun");
+  const btnShowJson = $("#btnShowJson");
+  const btnReset = $("#btnReset");
+  const btnSampleGoogle = $("#btnSampleGoogle");
+  const btnSampleBing = $("#btnSampleBing");
+
+  // Regex de validação de período
+  const RX_GOOGLE = /^(([1-9]|1\\d|2[0-4])h|([1-9]|[12]\\d|30)d|1y)$/; // 1..24h, 1..30d, 1y
+  const RX_BING = /^(4|7|8|9)$/;
+
+  function parseListInput(v){
+    if(!v) return [];
+    return v.split(/[,\\n;]+/).map(s=>s.trim()).filter(Boolean);
+  }
+
+  function toast(msg, type){
+    toastEl.textContent = msg;
+    toastEl.className = "toast" + (type ? " " + type : "");
+    toastEl.style.display = "flex";
+    setTimeout(()=>{ toastEl.style.display = "none"; }, 3500);
+  }
+
+  function setStatus(text){ statusEl.textContent = text; }
+
+  function providerChanged(){
+    const p = providerEl.value;
+    if(p === "bing"){
+      captureWrapEl.style.display = "block";
+      hintPeriodEl.textContent = "Bing → 4 (24h), 7 (semana), 8 (mês), 9 (ano)";
+      if (!RX_BING.test(periodEl.value || "")) periodEl.placeholder = "4/7/8/9";
+    }else{
+      captureWrapEl.style.display = "none";
+      hintPeriodEl.textContent = "Google → 1h..24h, 1d..30d, 1y";
+      if (!RX_GOOGLE.test(periodEl.value || "")) periodEl.placeholder = "6h/7d/1y";
     }
+  }
 
-    function saveApiBase() {
-      const v = apiUrlInput.value.trim();
-      if (!v) return;
-      localStorage.setItem(STORAGE_KEY, v);
-      toast('Endpoint salvo.');
+  function useDbChanged(){
+    areaWrapEl.style.display = useDbEl.checked ? "block" : "none";
+  }
+
+  function buildPayload(){
+    const provider = providerEl.value;
+    const payload = {
+      keywords: parseListInput(keywordsEl.value),
+      keywords_exact: parseListInput(keywordsExactEl.value),
+      sites: parseListInput(sitesEl.value),
+      lang: langEl.value,
+      period: (periodEl.value || "").trim(),
+      n: Number(nEl.value || 5),
+      use_db: !!useDbEl.checked,
+      capture_content: provider === "bing" ? !!captureEl.checked : false,
+      area: useDbEl.checked ? (areaEl.value || "").trim() : null
+    };
+    return { provider, payload };
+  }
+
+  function validate({provider, payload}){
+    // period por provedor
+    if(provider === "google" && !RX_GOOGLE.test(payload.period)){
+      throw new Error("Período inválido para Google. Use 1h..24h, 1d..30d ou 1y.");
     }
-
-    function toast(msg) {
-      const el = document.createElement('div');
-      el.textContent = msg;
-      el.className = 'fixed bottom-6 right-6 px-3 py-2 rounded-lg bg-slate-900 text-white text-xs shadow-lg';
-      document.body.appendChild(el);
-      setTimeout(() => { el.remove(); }, 1800);
+    if(provider === "bing" && !RX_BING.test(payload.period)){
+      throw new Error("Período inválido para Bing. Use 4 (24h), 7 (semana), 8 (mês) ou 9 (ano).");
     }
-
-    function setLoading(loading) {
-      spinner.classList.toggle('hidden', !loading);
-      submitBtn.disabled = loading;
+    if(!payload.use_db && !(payload.keywords.length || payload.keywords_exact.length || payload.sites.length)){
+      throw new Error("Informe keywords/keywords_exact/sites ou defina use_db=true.");
     }
-
-    function showError(msg) {
-      errorBox.textContent = msg;
-      errorBox.classList.remove('hidden');
+    if(payload.use_db && !payload.area){
+      throw new Error("Campo 'area' é obrigatório quando use_db=true.");
     }
-
-    function clearError() {
-      errorBox.classList.add('hidden');
-      errorBox.textContent = '';
+    if(isNaN(payload.n) || payload.n < 1 || payload.n > 50){
+      throw new Error("Campo 'n' deve estar entre 1 e 50.");
     }
+  }
 
-    function escapeHtml(str) {
-      return String(str).replace(/[&<>"']/g, (ch) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[ch]));
+  function renderResults(items){
+    resultsEl.innerHTML = "";
+    if(!items || !items.length){
+      resultsEl.innerHTML = "<div class='hint'>Nenhum resultado retornado.</div>";
+      return;
     }
+    // grid de cartões
+    for(const it of items){
+      const hasImg = !!it.link_image;
+      const hasContent = !!it.content;
 
-    // Remove cercas ```...```
-    function stripCodeFences(text) {
-      if (!text) return "";
-      return String(text).replace(/```[a-zA-Z0-9_+-]*\s*([\s\S]*?)```/g, (_, inner) => inner.trim()).trim();
-    }
+      const card = document.createElement("div");
+      card.className = "result-card";
 
-    // Extrai mensagem principal (analise_objetivo) se a string vier em JSON
-    function extractMessage(raw) {
-      if (raw == null) return "";
-      const clean = stripCodeFences(String(raw).trim());
-      try {
-        const j = JSON.parse(clean);
-        if (j && typeof j === "object" && typeof j.analise_objetivo === "string") {
-          return j.analise_objetivo.trim();
-        }
-      } catch (_) {}
-      return clean;
-    }
+      const img = document.createElement("img");
+      img.className = "result-img";
+      img.alt = it.title || "imagem";
+      img.src = hasImg ? it.link_image : "data:image/svg+xml;utf8," + encodeURIComponent(
+        `<svg xmlns='http://www.w3.org/2000/svg' width='110' height='110'><rect width='100%' height='100%' fill='#0b0b0f'/><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' font-size='12' fill='#6b7280'>sem imagem</text></svg>`
+      );
 
-    // Extrai data se vier em data.date ou data.data_analise; senão tenta pegar da string JSON
-    function extractDateField(data) {
-      if (!data) return "";
-      if (typeof data.date === "string" && data.date) return data.date;
-      if (typeof data.data_analise === "string" && data.data_analise) return data.data_analise;
-      if (data.message) {
-        const clean = stripCodeFences(String(data.message));
-        try {
-          const j = JSON.parse(clean);
-          if (j && typeof j.data_analise === "string") return j.data_analise;
-          if (j && typeof j.date === "string") return j.date;
-        } catch(_) {}
+      const right = document.createElement("div");
+      const h3 = document.createElement("div");
+      h3.className = "result-title";
+      h3.innerHTML = `<a href="${it.link_news}" target="_blank" rel="noopener">${escapeHtml(it.title || "-")}</a>`;
+
+      const meta = document.createElement("div");
+      meta.className = "meta";
+      const b1 = `<span class="badge">${escapeHtml(it.font || "fonte desconhecida")}</span>`;
+      const b2 = `<span class="badge">${escapeHtml(it.date || "-")}</span>`;
+      const b3 = it.keyword ? `<span class="badge">kw: ${escapeHtml(it.keyword)}</span>` : "";
+      meta.innerHTML = b1 + b2 + b3;
+
+      const desc = document.createElement("div");
+      desc.className = "hint";
+      desc.textContent = it.descript || "";
+
+      right.appendChild(h3);
+      right.appendChild(meta);
+      right.appendChild(desc);
+
+      if(hasContent){
+        const content = document.createElement("div");
+        content.className = "content";
+        content.textContent = it.content;
+        right.appendChild(content);
+      }else{
+        const content = document.createElement("div");
+        content.className = "content empty";
+        content.textContent = "Sem conteúdo extraído (ou não solicitado).";
+        right.appendChild(content);
       }
-      return "";
+
+      card.appendChild(img);
+      card.appendChild(right);
+      resultsEl.appendChild(card);
     }
+  }
 
-    // ==== NOVO: Normalizador para resposta com "tendencias_recomendadas" (inclusive quando vier dentro de message) ====
-    function normalizeResponse(data) {
-      const d = (data && typeof data === 'object') ? JSON.parse(JSON.stringify(data)) : data;
+  function escapeHtml(s){
+    return String(s).replace(/[&<>\"']/g, (c)=>({ "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;" }[c]));
+  }
 
-      // Caso a resposta venha como string JSON dentro de message
-      if (d && typeof d.message === 'string') {
-        const clean = stripCodeFences(d.message);
-        try {
-          const parsed = JSON.parse(clean);
-          if (parsed && parsed.tendencias_recomendadas) {
-            const recsFromMsg = parsed.tendencias_recomendadas.map((it) => ({
-              id: it.id_tendencia ?? undefined,
-              tendencia: it.nome_tendencia || '—',
-              explicacao: it.justificativa || '—',
-              tema: it.tema || '',
-              maturidade: it.maturidade || it.nivel || '',
-              // aceita score ou score_relevancia
-              score_relevancia: (typeof it.score_relevancia !== 'undefined') ? it.score_relevancia
-                                  : (typeof it.score !== 'undefined') ? it.score
-                                  : undefined,
-              // aceita tendenica (typo), tendencia e link
-              link: it.link_da_tendenica || it.link_da_tendencia || it.link || ''
-            }));
-            return {
-              objective: parsed.analise_objetivo || d.objective || '',
-              date: parsed.data_analise || d.date || '',
-              recommendations: recsFromMsg
-            };
-          }
-        } catch(_) {}
+  async function run(){
+    try{
+      const { provider, payload } = buildPayload();
+      validate({provider, payload});
+
+      setStatus("executando…");
+      kpiCountEl.textContent = "0";
+      kpiTimeEl.textContent = "-";
+      resultsEl.innerHTML = "";
+      jsonOutEl.textContent = "{}";
+
+      const url = (BASE_API_URL || "") + ENDPOINTS[provider];
+      const started = performance.now();
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+
+      const elapsed = Math.round(performance.now() - started);
+      let data, text;
+      try{
+        text = await res.text();
+        data = text ? JSON.parse(text) : null;
+      }catch(e){
+        // resposta pode não ser JSON em erro
+        data = { error: text || res.statusText };
       }
 
-      // Se já estiver no formato antigo esperado { objective, recommendations }
-      if (d && Array.isArray(d.recommendations)) return d;
-
-      // Se vier no formato novo diretamente
-      if (d && Array.isArray(d.tendencias_recomendadas)) {
-        const recs = d.tendencias_recomendadas.map((it) => ({
-          id: it.id_tendencia ?? undefined,
-          tendencia: it.nome_tendencia || '—',
-          explicacao: it.justificativa || '—',
-          tema: it.tema || '',
-          maturidade: it.maturidade || it.nivel || '',
-          score_relevancia: (typeof it.score_relevancia !== 'undefined') ? it.score_relevancia
-                              : (typeof it.score !== 'undefined') ? it.score
-                              : undefined,
-          link: it.link_da_tendenica || it.link_da_tendencia || it.link || ''
-        }));
-        return {
-          objective: d.analise_objetivo || d.objective || '',
-          date: d.data_analise || d.date || '',
-          recommendations: recs
-        };
-      }
-
-      // Se a API devolveu apenas uma mensagem e/ou data, manter como está
-      return d;
-    }
-
-    // ===== Render =====
-    function renderResult(rawData) {
-      const data = normalizeResponse(rawData);
-
-      cards.innerHTML = '';
-      clearError();
-
-      // Reset visuais
-      emptyBox.classList.add('hidden');
-      resultObjective.classList.add('hidden');
-      resultObjective.textContent = '';
-
-      const hasRecs = data && Array.isArray(data.recommendations) && data.recommendations.length > 0;
-
-      if (!hasRecs) {
-        // Mostrar somente a mensagem + data (se houver)
-        const msg = data ? extractMessage(data.message) : "";
-        const dateStr = extractDateField(data);
-
-        if (msg) {
-          const card = document.createElement('article');
-          card.className = 'rounded-xl border border-amber-300/70 dark:border-amber-700 glass p-4 shadow-sm';
-          card.innerHTML = `
-            <div class="flex items-start gap-3">
-              <span class="text-amber-600 dark:text-amber-300">⚠️</span>
-              <div>
-                <h3 class="font-semibold mb-1">Resposta do agente</h3>
-                <p class="text-sm">${escapeHtml(msg)}</p>
-                ${dateStr ? `<p class="text-xs text-slate-500 mt-2">Data da consulta: <span class="code">${escapeHtml(dateStr)}</span></p>` : ""}
-              </div>
-            </div>`;
-          cards.appendChild(card);
-          if (data && (data.objective || data.analise_objetivo)) {
-            resultObjective.classList.remove('hidden');
-            resultObjective.textContent = `Objetivo: ${data.objective || data.analise_objetivo}`;
-          }
-          debugPre.textContent = JSON.stringify(rawData || {}, null, 2);
-          return;
-        }
-        // Sem mensagem e sem recomendações → vazio
-        emptyBox.classList.remove('hidden');
-        debugPre.textContent = JSON.stringify(rawData || {}, null, 2);
+      jsonOutEl.textContent = JSON.stringify({ request: { url, payload }, response: data }, null, 2);
+      if(!res.ok){
+        setStatus("erro");
+        kpiTimeEl.textContent = elapsed + " ms";
+        toast(`Erro ${res.status}: ${res.statusText}`, "danger");
         return;
       }
 
-      // Caso 1: recomendações presentes
-      resultObjective.classList.remove('hidden');
-      resultObjective.textContent = `Objetivo: ${data.objective || ''}`;
-      // Badge com data da análise, se existir
-      if (data.date) {
-        const dateBadge = document.createElement('span');
-        dateBadge.className = 'ml-2 align-middle text-[11px] px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300';
-        dateBadge.textContent = `Data: ${data.date}`;
-        resultObjective.appendChild(dateBadge);
+      const items = (data && data.results) || [];
+      setStatus("ok");
+      kpiCountEl.textContent = String(items.length);
+      kpiTimeEl.textContent = elapsed + " ms";
+      renderResults(items);
+      if(items.length === 0){
+        toast("Requisição concluída, porém sem resultados.", "warn");
       }
-
-      data.recommendations.forEach((rec) => {
-        const card = document.createElement('article');
-        card.className = 'rounded-xl border border-slate-200/70 dark:border-slate-700 glass p-4 shadow-sm hover:shadow-md transition-shadow';
-
-        // Badge de maturidade ou, na ausência, badge por score
-        let badge = '';
-        if (rec.maturidade) {
-          let badgeClass = 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300';
-          if (/adote/i.test(rec.maturidade)) {
-            badgeClass = 'bg-pink-100 text-pink-700 dark:bg-pink-900/40 dark:text-pink-200';
-          } else if (/experimente/i.test(rec.maturidade)) {
-            badgeClass = 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-200';
-          }
-          badge = `<span class="text-[11px] px-2 py-1 rounded-full ${badgeClass}">${escapeHtml(rec.maturidade)}</span>`;
-        } else if (typeof rec.score_relevancia !== 'undefined') {
-          const s = Number(rec.score_relevancia) || 0;
-          let badgeClass = 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300';
-          if (s >= 85) badgeClass = 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-200';
-          else if (s >= 70) badgeClass = 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-200';
-          else badgeClass = 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-200';
-          badge = `<span class="text-[11px] px-2 py-1 rounded-full ${badgeClass}">score ${escapeHtml(rec.score_relevancia)}</span>`;
-        }
-
-        const linkBtn = rec.link
-          ? `<a href="${escapeHtml(rec.link)}" target="_blank" class="text-xs px-2.5 py-1.5 rounded-lg border border-indigo-300/60 dark:border-indigo-700 hover:bg-indigo-50 dark:hover:bg-indigo-900/30">Abrir tendência</a>`
-          : '';
-
-        card.innerHTML = `
-          <div class="flex items-start justify-between gap-2">
-            <div>
-              <h3 class="font-semibold text-slate-900 dark:text-slate-100">${escapeHtml(rec.tendencia || '—')}</h3>
-              <p class="text-xs text-slate-500 mt-0.5">${escapeHtml(rec.tema || '—')}</p>
-            </div>
-            ${badge}
-          </div>
-          <p class="mt-3 text-sm leading-relaxed">${escapeHtml(rec.explicacao || '—')}</p>
-          <div class="mt-3 flex items-center gap-2">
-            ${linkBtn}
-            ${typeof rec.score_relevancia !== 'undefined'
-              ? `<span class="ml-auto text-[11px] px-2 py-1 rounded bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300">score: ${escapeHtml(rec.score_relevancia)}</span>`
-              : ''}
-          </div>`;
-        cards.appendChild(card);
-      });
-
-      debugPre.textContent = JSON.stringify(rawData, null, 2);
+    }catch(err){
+      setStatus("erro");
+      toast(err.message || String(err), "danger");
     }
+  }
 
-    // ===== API =====
-    async function callApi(objective) {
-      const endpoint = apiUrlInput.value.trim();
-      if (!endpoint) throw new Error('Informe o endpoint da API.');
+  function fillSampleGoogle(){
+    providerEl.value = "google";
+    providerChanged();
+    langEl.value = "pt-BR";
+    keywordsEl.value = "IA, machine learning";
+    keywordsExactEl.value = "";
+    sitesEl.value = "";
+    nEl.value = 5;
+    periodEl.value = "6h";
+    useDbEl.checked = false;
+    useDbChanged();
+  }
 
-      // Timeout manual (35s) com AbortController
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 35000);
+  function fillSampleBing(){
+    providerEl.value = "bing";
+    providerChanged();
+    langEl.value = "pt-BR";
+    keywordsEl.value = "IA";
+    keywordsExactEl.value = "";
+    sitesEl.value = "";
+    nEl.value = 5;
+    periodEl.value = "7";
+    useDbEl.checked = false;
+    useDbChanged();
+    captureEl.checked = true;
+  }
 
-      const res = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ objective }),
-        signal: controller.signal,
-      });
+  function resetForm(e){
+    if(e) e.preventDefault();
+    document.querySelector("form")?.reset?.();
+    providerEl.value = "google"; providerChanged();
+    langEl.value = "pt-BR";
+    keywordsEl.value = "";
+    keywordsExactEl.value = "";
+    sitesEl.value = "";
+    nEl.value = 5;
+    periodEl.value = "";
+    useDbEl.checked = false; useDbChanged();
+    captureEl.checked = true;
+    setStatus("pronto");
+    kpiCountEl.textContent = "0";
+    kpiTimeEl.textContent = "-";
+    resultsEl.innerHTML = "";
+    jsonOutEl.textContent = "{}";
+  }
 
-      clearTimeout(timeout);
+  // ========================= INIT ============================
+  apiUrlHintEl.textContent = (BASE_API_URL || "(mesmo host)") + "  •  " + ENDPOINTS.google + " | " + ENDPOINTS.bing;
 
-      if (!res.ok) {
-        const txt = await res.text().catch(() => '');
-        throw new Error(`Erro ${res.status}: ${txt || res.statusText}`);
-      }
-      return res.json();
-    }
+  providerEl.addEventListener("change", providerChanged);
+  useDbEl.addEventListener("change", useDbChanged);
+  btnRun.addEventListener("click", run);
+  btnReset.addEventListener("click", resetForm);
+  btnShowJson.addEventListener("click", ()=> jsonPanelEl.open = !jsonPanelEl.open );
+  btnSampleGoogle.addEventListener("click", fillSampleGoogle);
+  btnSampleBing.addEventListener("click", fillSampleBing);
 
-    // ===== Export =====
-    function toCsv(raw) {
-      const data = normalizeResponse(raw) || {};
-      if (Array.isArray(data.recommendations) && data.recommendations.length > 0) {
-        const header = ['id','tendencia','tema','maturidade','score_relevancia','link','explicacao'];
-        const rows = [header];
-        data.recommendations.forEach(r => rows.push([
-          r.id ?? '', r.tendencia || '', r.tema || '', r.maturidade || '',
-          (typeof r.score_relevancia !== 'undefined' ? r.score_relevancia : ''), r.link || '',
-          (r.explicacao || '').replace(/\n/g, ' ')
-        ]));
-        return rows.map(r => r.map(cell => `"${String(cell).replace(/"/g,'""')}"`).join(',')).join('\n');
-      }
-      // Só mensagem + data
-      if (raw && (raw.message || raw.date || raw.data_analise)) {
-        const msg = extractMessage(raw.message).replace(/\n/g,' ');
-        const d = extractDateField(raw);
-        const rows = [['tipo','mensagem','data'], ['agente', msg, d || '']];
-        return rows.map(r => r.map(cell => `"${String(cell).replace(/"/g,'""')}"`).join(',')).join('\n');
-      }
-      return '';
-    }
+  providerChanged(); useDbChanged();
 
-    function download(filename, content, type='text/plain') {
-      const blob = new Blob([content], { type });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url; a.download = filename; a.click();
-      setTimeout(() => URL.revokeObjectURL(url), 1500);
-    }
-
-    // ===== Events =====
-    saveApiBtn.addEventListener('click', saveApiBase);
-
-    document.querySelectorAll('[data-sample]').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const txt = btn.textContent.trim();
-        if (txt.includes('Confiabilidade')) {
-          objectiveInput.value = 'Aumentar o número de dias consecutivos sem bugs críticos no portal GamificaBB em produção para 30 dias';
-        } else if (txt.includes('autoridade')) {
-          objectiveInput.value = 'Elevar a autoridade do portal GamificaBB em buscadores e canais sociais com conteúdos de alta confiabilidade';
-        } else {
-          objectiveInput.value = 'Reduzir o MTTR de incidentes críticos do portal GamificaBB para menos de 30 minutos';
-        }
-        objectiveInput.focus();
-      });
-    });
-
-    submitBtn.addEventListener('click', async () => {
-      const objective = objectiveInput.value.trim();
-      if (!objective) { showError('Informe um objetivo.'); return; }
-      clearError(); setLoading(true);
-      try {
-        const data = await callApi(objective);
-        renderResult(data);
-      } catch (err) {
-        showError(err.message || 'Falha ao chamar API.');
-        debugPre.textContent = String(err);
-      } finally { setLoading(false); }
-    });
-
-    clearBtn.addEventListener('click', () => {
-      objectiveInput.value = '';
-      cards.innerHTML = '';
-      emptyBox.classList.remove('hidden');
-      resultObjective.classList.add('hidden');
-      resultObjective.textContent = '';
-      clearError();
-      debugPre.textContent = '';
-    });
-
-    document.addEventListener('keydown', (e) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') submitBtn.click();
-    });
-
-    exportJsonBtn.addEventListener('click', () => {
-      const txt = debugPre.textContent.trim();
-      const fallback = JSON.stringify({ objective: objectiveInput.value.trim(), recommendations: [] }, null, 2);
-      download('sinaliza_result.json', txt || fallback, 'application/json');
-    });
-
-    exportCsvBtn.addEventListener('click', () => {
-      let raw = {};
-      try { raw = JSON.parse(debugPre.textContent || '{}'); } catch {}
-      const csv = toCsv(raw);
-      if (!csv) { toast('Nada para exportar.'); return; }
-      download('sinaliza_result.csv', csv, 'text/csv');
-    });
-
-    copyJsonBtn.addEventListener('click', async () => {
-      const txt = debugPre.textContent.trim();
-      if (!txt) { toast('Nada para copiar.'); return; }
-      await navigator.clipboard.writeText(txt).catch(() => {});
-      toast('JSON copiado!');
-    });
-
-    // ===== Init =====
-    loadApiBase();
-    emptyBox.classList.remove('hidden');
-  </script>
+</script>
 </body>
 </html>
